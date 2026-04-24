@@ -1,0 +1,40 @@
+{
+  "dependencies": {
+    "@material/web": "^2.4.1",
+    "electron-squirrel-startup": "^1.0.1",
+    "konva": "^10.2.0"
+  },
+  "name": "willow-xml",
+  "productName": "Willow XML",
+  "version": "1.0.0",
+  "description": "Desktop app for making CIFF templates",
+  "main": "app.js",
+  "devDependencies": {
+    "@electron-forge/cli": "^7.11.1",
+    "@electron-forge/maker-deb": "^7.11.1",
+    "@electron-forge/maker-rpm": "^7.11.1",
+    "@electron-forge/maker-squirrel": "^7.11.1",
+    "@electron-forge/maker-zip": "^7.11.1",
+    "@electron-forge/plugin-auto-unpack-natives": "^7.11.1",
+    "@electron-forge/plugin-fuses": "^7.11.1",
+    "@electron/fuses": "^1.8.0",
+    "electron": "^41.1.1"
+  },
+  "scripts": {
+    "start": "electron-forge start",
+    "package": "electron-forge package",
+    "make": "electron-forge make"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/g3orgedd/willow_project.git"
+  },
+  "keywords": [],
+  "author": "GigaGeorge",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/g3orgedd/willow_project/issues"
+  },
+  "homepage": "https://github.com/g3orgedd/willow_project#readme"
+}

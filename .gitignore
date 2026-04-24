@@ -1,0 +1,10 @@
+node_modules/*
+!node_modules/konva/
+!node_modules/konva/**
+out/
+dist/
+build/
+*.log
+.env
+*.exe
+*.nupkg

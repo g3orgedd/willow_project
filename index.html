@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Willow XML CIFF Editor</title>
+  <script src="node_modules/konva/konva.min.js"></script>
+  <link rel="stylesheet" href="./styles.css" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght@6..144,1..1000&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <header class="topbar">
+    <div class="topbar__brandCluster">
+      <div class="brand surface-card">
+        <div class="brand__icon">
+          <img id="logo" src="./resourses/azm_24dp.svg" alt="" aria-hidden="true" />
+        </div>
+        <div class="brand__copy">
+          <div class="brand__eyebrow">Willow XML</div>
+          <div class="brand__title">CIFF Editor</div>
+        </div>
+      </div>
+
+      <div class="topbar__actions topbar__actions--primary">
+        <button id="btnNewTemplate" class="btn btn--tonal topbarAction" type="button">
+          <img class="buttonIcon" src="./resourses/add_circle_24dp.svg" alt="" aria-hidden="true" />
+          <span>Create</span>
+        </button>
+
+        <button id="btnOpenFile" class="btn btn--ghost topbarAction" type="button">
+          <img class="buttonIcon" src="./resourses/upload_file_24dp.svg" alt="" aria-hidden="true" />
+          <span>Open</span>
+        </button>
+        <input id="fileInput" type="file" accept=".ciff,.xml,text/xml" hidden />
+
+        <button id="btnSave" class="btn btn--primary topbarAction" type="button">
+          <img class="buttonIcon" src="./resourses/save_24dp.svg" alt="" aria-hidden="true" />
+          <span>Save</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="topbar__actions topbar__actions--utility">
+      <div class="utilityGroup surface-card">
+        <button id="btnUndo" class="btn btn--ghost btn--icon" type="button" aria-label="Undo" title="Undo (Ctrl+Z)">
+          <img class="iconButton__icon" src="./resourses/undo_24dp.svg" alt="" aria-hidden="true" />
+        </button>
+
+        <button id="btnRedo" class="btn btn--ghost btn--icon" type="button" aria-label="Redo" title="Redo (Ctrl+Y)">
+          <img class="iconButton__icon" src="./resourses/redo_24dp.svg" alt="" aria-hidden="true" />
+        </button>
+      </div>
+
+      <div class="utilityGroup utilityGroup--toggles surface-card">
+        <label class="utilityToggle" for="toggleGrid">
+          <input id="toggleGrid" type="checkbox" checked />
+          <span>Grid</span>
+        </label>
+
+        <label class="utilityToggle" for="toggleSnap">
+          <input id="toggleSnap" type="checkbox" checked />
+          <span>Snap</span>
+        </label>
+      </div>
+
+      <div class="zoom surface-card">
+        <button id="zoomOut" class="btn btn--ghost btn--icon" type="button" aria-label="Zoom out">
+          <img class="iconButton__icon" src="./resourses/remove_24dp.svg" alt="" aria-hidden="true" />
+        </button>
+
+        <div class="zoom__sliderWrap">
+          <label class="srOnly" for="zoomRange">Zoom</label>
+          <input id="zoomRange" class="zoomRange" type="range" min="25" max="400" value="100" step="1" />
+        </div>
+
+        <button id="zoomIn" class="btn btn--ghost btn--icon" type="button" aria-label="Zoom in">
+          <img class="iconButton__icon" src="./resourses/add_24dp.svg" alt="" aria-hidden="true" />
+        </button>
+
+        <div id="zoomLabel" class="zoom__label">100%</div>
+      </div>
+    </div>
+  </header>
+
+  <main class="app">
+    <aside class="panel panel--left surface-card">
+      <div class="panel__section panel__section--dense">
+        <div class="panel__header">
+          <div>
+            <div class="panel__title">Tools</div>
+          </div>
+        </div>
+
+        <div class="toolgrid">
+          <button class="btn btn--ghost toolButton" id="addDataMatrix" type="button">
+            <img class="buttonIcon" src="./resourses/barcode_24dp.svg" alt="" aria-hidden="true" />
+            <span>DataMatrix</span>
+          </button>
+
+          <button class="btn btn--ghost toolButton" id="addFixedText" type="button">
+            <img class="buttonIcon" src="./resourses/text_fields_24dp.svg" alt="" aria-hidden="true" />
+            <span>Text</span>
+          </button>
+
+          <button class="btn btn--ghost toolButton" id="addDateText" type="button">
+            <img class="buttonIcon" src="./resourses/calendar_month_24dp.svg" alt="" aria-hidden="true" />
+            <span>Date</span>
+          </button>
+
+          <button class="btn btn--ghost toolButton" id="addTimeText" type="button">
+            <img class="buttonIcon" src="./resourses/clock_loader_24dp.svg" alt="" aria-hidden="true" />
+            <span>Time</span>
+          </button>
+
+          <button class="btn btn--ghost toolButton" id="addOffsetDateText" type="button" disabled>
+            <img class="buttonIcon" src="./resourses/move_up_24dp.svg" alt="" aria-hidden="true" />
+            <span>Offset</span>
+          </button>
+
+          <button class="btn btn--ghost toolButton" id="addCounterText" type="button">
+            <img class="buttonIcon" src="./resourses/decimal_increase_24dp.svg" alt="" aria-hidden="true" />
+            <span>Counter</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="panel__section panel__section--fill">
+        <div class="panel__header">
+          <div>
+            <div class="panel__title">Printed</div>
+            <div class="muted">Fields</div>
+          </div>
+          <label class="srOnly" id="searchField" for="fieldSearch">Search fields</label>
+          <div class="panelSearchSlot">
+            <img class="panelSearchIcon" src="./resourses/search_24dp.svg" alt="" aria-hidden="true" />
+            <input id="fieldSearch" class="input panelSearch" type="search" placeholder="Search fields" />
+          </div>
+        </div>
+        <div id="fieldsPrinted" class="list"></div>
+      </div>
+
+      <div class="panel__section panel__section--fill">
+        <div class="panel__header">
+          <div>
+            <div class="panel__title">Hidden</div>
+            <div class="muted">Fields</div>
+          </div>
+          <button id="btnShowHiddenOnCanvas" class="btn btn--ghost btn--icon" type="button" aria-label="Show hidden fields" title="Show hidden fields">
+            <img class="btnIcon" src="./resourses/visibility_24dp.svg" alt="" aria-hidden="true" />
+          </button>
+        </div>
+        <div id="fieldsHidden" class="list"></div>
+      </div>
+    </aside>
+
+    <section class="canvasWrap surface-card">
+      <div class="canvasViewport" id="canvasViewport">
+        <div class="rulerCorner" aria-hidden="true"></div>
+        <canvas class="rulerCanvas rulerCanvas--top" id="rulerTop" aria-hidden="true"></canvas>
+        <canvas class="rulerCanvas rulerCanvas--left" id="rulerLeft" aria-hidden="true"></canvas>
+        <div class="canvasHost" id="canvasHost"></div>
+      </div>
+
+      <div class="statusbar">
+        <div id="statusLeft" class="statusbar__item">Open a CIFF file (.ciff/.xml).</div>
+        <div id="statusRight" class="statusbar__item">-</div>
+      </div>
+    </section>
+
+    <aside class="panel panel--right surface-card">
+      <div class="tabsWrap">
+        <div class="tabs" role="tablist" aria-label="Inspector sections">
+          <button class="tab tab--active" id="properies_tab" data-tab="props" type="button" role="tab" aria-selected="true">Properties</button>
+          <button class="tab" id="datamatrix_tab" data-tab="datamatrix" type="button" role="tab" aria-selected="false">DataMatrix</button>
+          <button class="tab" id="hidden_tab" data-tab="hidden" type="button" role="tab" aria-selected="false">Hidden</button>
+          <button class="tab" id="offsets_tab" data-tab="offsets" type="button" role="tab" aria-selected="false">Offsets</button>
+        </div>
+      </div>
+
+      <div class="panel__section tabview tabview--active" id="tab-props">
+        <div class="panel__title">Selected object</div>
+        <div id="propsEmpty" class="muted">Choose an object on the canvas or in the field list.</div>
+        <div id="propsPanel" class="form hidden"></div>
+
+        <div class="sectionAction">
+          <button id="btnDelete" class="btn btn--danger btn--wide" type="button" disabled>Delete selected</button>
+        </div>
+
+        <div class="hr"></div>
+
+        <div class="sectionBlock">
+          <div class="panel__title">Template size</div>
+          <div id="templateSizePanel" class="form"></div>
+        </div>
+
+        <div class="hr"></div>
+
+        <div class="sectionBlock">
+          <div class="panel__title">Printer settings</div>
+          <div id="templateTargetPanel" class="form"></div>
+        </div>
+      </div>
+
+      <div class="panel__section tabview" id="tab-datamatrix">
+        <div class="panel__title">DataMatrix</div>
+        <div id="dmEmpty" class="muted">Choose a Barcode/DataMatrix field.</div>
+        <div id="dmPanel" class="form hidden"></div>
+      </div>
+
+      <div class="panel__section tabview" id="tab-hidden">
+        <div class="panel__title">Hidden field editor</div>
+        <div class="muted">Edit values for non-printed fields.</div>
+        <div id="hiddenEditor" class="hiddenEditor"></div>
+      </div>
+
+      <div class="panel__section tabview" id="tab-offsets">
+        <div class="panel__header">
+          <div>
+            <div class="panel__title">Date offsets</div>
+            <div class="muted">Manage reusable calculated dates.</div>
+          </div>
+          <button id="addOffset" class="btn btn--tonal btn--icon" type="button" aria-label="Add offset" title="Add offset">
+            <img class="iconButton__icon" src="./resourses/add_24dp.svg" alt="" aria-hidden="true" />
+          </button>
+        </div>
+        <div id="offsetsEditor" class="hiddenEditor"></div>
+      </div>
+    </aside>
+  </main>
+
+  <div id="newTemplateModal" class="modal hidden" aria-hidden="true">
+    <div class="modal__backdrop" data-modal-close="1"></div>
+    <div class="modal__card surface-card" role="dialog" aria-modal="true" aria-labelledby="newTemplateTitle">
+      <div class="modal__header">
+        <div>
+          <div class="modal__title" id="newTemplateTitle">Create template</div>
+          <div class="modal__subtitle">Choose printer model, print mode, and substrate size.</div>
+        </div>
+      </div>
+
+      <div class="dialogContent">
+        <div class="form form--dialog">
+          <div class="fieldRow">
+            <label for="newTemplatePrinterModel">Printer model</label>
+            <select id="newTemplatePrinterModel" class="select"></select>
+          </div>
+
+          <div class="fieldRow">
+            <label for="newTemplatePrintMode">Print mode</label>
+            <select id="newTemplatePrintMode" class="select"></select>
+          </div>
+
+          <div class="fieldRow">
+            <label for="newTemplateWidth">Width (mm)</label>
+            <input id="newTemplateWidth" class="input" type="number" min="0.01" max="53.33" step="0.01" />
+          </div>
+
+          <div class="fieldRow">
+            <label for="newTemplateHeight">Height (mm)</label>
+            <input id="newTemplateHeight" class="input" type="number" min="0.01" max="75.00" step="0.01" />
+          </div>
+
+          <div class="note">For 53 mm print heads the supported range is 53.33 by 75.00 mm.</div>
+        </div>
+      </div>
+
+      <div class="modal__actions">
+        <button id="btnCancelNewTemplate" class="btn btn--text" type="button">Cancel</button>
+        <button id="btnCreateNewTemplate" class="btn btn--primary" type="button">Create</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    window.CIFF_EDITOR_MODULE_FLAGS = {
+      core: true,
+      canvasUi: true,
+      xmlLoad: true,
+      rendering: true,
+      editor: true,
+      inputs: true,
+      historySave: true,
+      bootstrap: true
+    };
+  </script>
+  <script src="./app.js"></script>
+</body>
+</html>
