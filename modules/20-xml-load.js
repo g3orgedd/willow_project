@@ -322,7 +322,7 @@ function parseFieldNode(node) {
   const dmNode = node.querySelector("Barcode > DataMatrix");
   const dm = dmNode ? {
     moduleSize: dmNode.querySelector("ModuleSize") ? normalizeDataMatrixModuleSizeValue(toFloat(dmNode.querySelector("ModuleSize")?.textContent, 0.5)) : null,
-    symbolSize: dmNode.querySelector("SymbolSize")?.textContent ?? "22X22",
+    symbolSize: normalizeDataMatrixSymbolSizeValue(dmNode.querySelector("SymbolSize")?.textContent, "22X22"),
     segments: parseDataMatrixSegments(node)
   } : null;
 

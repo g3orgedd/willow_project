@@ -98,7 +98,7 @@ function normalizeFontSizeValue(value) {
 
 function getMultiFontSizeValue(fields) {
   const sizes = fields
-    .map((field) => normalizeFontSizeValue(field.text?.pitch ?? 10))
+    .map((field) => normalizeFontSizeValue(getEffectiveTextPitch(field, 10)))
     .filter((value) => value != null);
   const firstSize = sizes[0] ?? null;
   return {
@@ -121,7 +121,7 @@ function createMultiFontSizeInput(fields) {
   const emit = () => {
     const nextSize = normalizeFontSizeValue(inp.value);
     if (nextSize == null) return;
-    if (lastEmitted === nextSize && fields.every((field) => normalizeFontSizeValue(field.text?.pitch ?? 10) === nextSize)) return;
+    if (lastEmitted === nextSize && fields.every((field) => normalizeFontSizeValue(getEffectiveTextPitch(field, 10)) === nextSize)) return;
 
     lastEmitted = nextSize;
     inp.value = String(nextSize);
@@ -190,7 +190,7 @@ function buildCommonProps(f) {
     wrap.appendChild(fieldRow("Type", inputText(f.fldType, () => {}, { disabled: true })));
   }
   wrap.appendChild(fieldRow("Max characters", inputText(formatMaxCharacters(f.data?.maxChars), () => {}, { readOnly: true })));
-  wrap.appendChild(fieldRow("Print", inputCheckbox(f.printed, (v) => { pushHistory(); f.printed = v; renderAll(); })));
+  wrap.appendChild(fieldRow("Print", inputCheckbox(f.printed, (v) => { pushHistory(); f.printed = v; renderAll(); }, { ariaLabel: "Print" })));
 
   wrap.appendChild(fieldRow("X (mm)", inputNumber(internalToMm(f.geom.x), (v) => { pushHistory(); f.geom.x = mmToInternal(v); renderAll(); })));
   wrap.appendChild(fieldRow("Y (mm)", inputNumber(internalToMm(f.geom.y), (v) => { pushHistory(); f.geom.y = mmToInternal(v); renderAll(); })));
@@ -336,7 +336,7 @@ function buildTextLikeProps(f) {
     hr.className = "hr";
     wrap.appendChild(hr);
 
-    wrap.appendChild(fieldRow("Font size", inputNumber(f.text.pitch ?? 10, (v) => {
+    wrap.appendChild(fieldRow("Font size", inputNumber(getEffectiveTextPitch(f, 10), (v) => {
       pushHistory();
       f.text.pitch = Math.max(1, Math.round(v));
       refreshFieldCanvasPreview(f);
@@ -417,7 +417,7 @@ function buildTextLikeProps(f) {
     }
   }
 
-  wrap.appendChild(fieldRow("Font size", inputNumber(f.text.pitch ?? 10, (v) => {
+  wrap.appendChild(fieldRow("Font size", inputNumber(getEffectiveTextPitch(f, 10), (v) => {
     pushHistory();
     f.text.pitch = Math.max(1, Math.round(v));
     refreshFieldCanvasPreview(f);
@@ -443,8 +443,9 @@ function buildBarcodeProps(f) {
 
   wrap.appendChild(fieldRow("Symbol size", selectSymbolSize(f.barcode.dataMatrix.symbolSize, (v) => {
     pushHistory();
-    if (DM_PROFILES[v]) applyDmProfile(f, v);
-    else f.barcode.dataMatrix.symbolSize = v;
+    const nextSymbolSize = normalizeDataMatrixSymbolSizeValue(v, "22X22");
+    if (DM_PROFILES[nextSymbolSize]) applyDmProfile(f, nextSymbolSize);
+    else f.barcode.dataMatrix.symbolSize = nextSymbolSize;
     syncDataMatrixGeomToModuleSize(f);
     renderAll();
   })));
@@ -597,7 +598,7 @@ function renderHiddenEditor() {
     title.textContent = f.name;
     const meta = document.createElement("div");
     meta.className = "card__meta";
-    meta.textContent = `${f.fldType} - Displayed=0`;
+    meta.textContent = `${getFieldSubtypeLabel(f)} - Displayed=0`;
     info.appendChild(title);
     info.appendChild(meta);
 
@@ -955,7 +956,7 @@ function addField(fldType) {
 
 // ---------- DM profile apply/validate ----------
 function applyDmProfile(dmField, profileName) {
-  const profile = DM_PROFILES[profileName];
+  const profile = DM_PROFILES[normalizeDataMatrixSymbolSizeValue(profileName, "22X22")];
   if (!profile) return;
   const dm = dmField.barcode?.dataMatrix;
   if (!dm) return;
@@ -1002,7 +1003,7 @@ function applyDmProfile(dmField, profileName) {
 }
 
 function validateDmProfile(dmField, symbolSize) {
-  const p = DM_PROFILES[symbolSize];
+  const p = DM_PROFILES[normalizeDataMatrixSymbolSizeValue(symbolSize, "22X22")];
   if (!p) return [];
   const dm = dmField.barcode?.dataMatrix;
   if (!dm) return ["No DataMatrix node."];

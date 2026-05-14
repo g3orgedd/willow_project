@@ -32,6 +32,12 @@
     strokeWidth: 1,
     dash: [4, 4]
   });
+  alignmentGuideGroup = new Konva.Group({
+    name: "AlignmentGuides",
+    visible: false,
+    listening: false
+  });
+  uiLayer.add(alignmentGuideGroup);
   uiLayer.add(selectionRect);
   uiLayer.add(transformer);
 
@@ -138,8 +144,8 @@
   window.addEventListener("keydown", (e) => {
     if (e.code === "Space") isSpaceDown = true;
     if (e.key === "Delete") deleteSelected();
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") { e.preventDefault(); undo(); }
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "y") { e.preventDefault(); redo(); }
+    if (matchesPrimaryShortcut(e, "KeyZ", "z")) { e.preventDefault(); undo(); }
+    if (matchesPrimaryShortcut(e, "KeyY", "y")) { e.preventDefault(); redo(); }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") { e.preventDefault(); downloadCiff(); }
   });
   window.addEventListener("keyup", (e) => { if (e.code === "Space") { isSpaceDown = false; isPanning = false; } });
@@ -196,6 +202,14 @@
   });
 }
 
+function matchesPrimaryShortcut(e, code, key) {
+  if (!(e.ctrlKey || e.metaKey) || e.shiftKey || e.altKey) return false;
+
+  // KeyboardEvent.code is based on the physical key and does not depend on
+  // the active keyboard layout. Keep event.key as a fallback for older paths.
+  return e.code === code || String(e.key || "").toLowerCase() === key;
+}
+
 // ---------- UI init ----------
 function initUI() {
   // Tabs
@@ -239,6 +253,7 @@ function initUI() {
 
   elToggleGrid.addEventListener("change", () => renderGrid());
   elToggleSnap.addEventListener("change", () => {/* used during drag */});
+  elToggleAlign?.addEventListener("change", () => clearAlignmentGuides());
 
   elSearch.addEventListener("input", () => renderFieldLists());
 

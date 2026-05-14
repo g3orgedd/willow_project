@@ -1,4 +1,5 @@
 /* app.js - module loader for the browser version of the CIFF editor */
+if (typeof window !== "undefined" && typeof document !== "undefined") {
 (function () {
   const moduleList = [
     { key: "core", src: "./modules/00-core.js", checks: ["CIFF_EDITOR_CORE_READY"] },
@@ -50,7 +51,14 @@
     alert(`Не удалось загрузить модуль редактора: ${error.message}`);
   });
 })();
+}
 
+if (
+  typeof require === "function" &&
+  typeof process !== "undefined" &&
+  process.versions?.electron &&
+  typeof window === "undefined"
+) {
 const { app, BrowserWindow } = require('electron');
 const path = require('path');
 
@@ -70,3 +78,4 @@ function createWindow() {
 app.whenReady().then(() => {
   createWindow();
 });
+}

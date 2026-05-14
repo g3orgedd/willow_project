@@ -287,7 +287,7 @@ function updateExistingFieldBlockNonInvasive(subImageBlock, f, lookupName = f.so
 
     // ModuleSize/SymbolSize inside DataMatrix: patch only if exist
     block = replaceTagTextWithinIfExists(block, "DataMatrix", "ModuleSize", serializeDataMatrixModuleSize(f.barcode.dataMatrix.moduleSize ?? 0.5));
-    block = replaceTagTextWithinIfExists(block, "DataMatrix", "SymbolSize", String(f.barcode.dataMatrix.symbolSize ?? "22X22"));
+    block = replaceTagTextWithinIfExists(block, "DataMatrix", "SymbolSize", normalizeDataMatrixSymbolSizeValue(f.barcode.dataMatrix.symbolSize, "22X22"));
 
     // Data objects: we rebuild the <Data>...</Data> region (structure-only inside Data)
     // This is OK and required when segments count/order changes.
@@ -338,7 +338,7 @@ function updateExistingFieldBlockNonInvasive(subImageBlock, f, lookupName = f.so
     }
 
     // Font Pitch/XMag patch-only
-    if (/<Pitch>/.test(block)) block = replaceTagTextIfExists(block, "Pitch", String(f.text.pitch ?? 10));
+    if (/<Pitch>/.test(block)) block = replaceTagTextIfExists(block, "Pitch", String(getEffectiveTextPitch(f, 10)));
     if (/<XMag>/.test(block) && f.text.xMag != null) block = replaceTagTextIfExists(block, "XMag", String(f.text.xMag));
   }
 
@@ -373,7 +373,7 @@ function buildFieldXmlOneLine(f) {
       logged +
       `<Data>${dataObjects}</Data>` +
       `<Barcode><BcH>${f.barcode.bcH ?? f.geom.h}</BcH><HR><HRFont/></HR><QuietMargin>${f.barcode.quietMargin ?? 0}</QuietMargin>` +
-      `<DataMatrix><ModuleSize>${serializeDataMatrixModuleSize(f.barcode.dataMatrix.moduleSize ?? 0.5)}</ModuleSize><SymbolSize>${f.barcode.dataMatrix.symbolSize ?? "22X22"}</SymbolSize></DataMatrix>` +
+      `<DataMatrix><ModuleSize>${serializeDataMatrixModuleSize(f.barcode.dataMatrix.moduleSize ?? 0.5)}</ModuleSize><SymbolSize>${normalizeDataMatrixSymbolSizeValue(f.barcode.dataMatrix.symbolSize, "22X22")}</SymbolSize></DataMatrix>` +
       `</Barcode>`;
 
     return base + barcode + `</Field>`;
@@ -410,7 +410,7 @@ function buildFieldXmlOneLine(f) {
     `</Object></Data>`;
 
   const text =
-    `<Text><Font><Pitch>${f.text.pitch ?? 10}</Pitch>` +
+    `<Text><Font><Pitch>${getEffectiveTextPitch(f, 10)}</Pitch>` +
       (f.text.xMag != null ? `<XMag>${f.text.xMag}</XMag>` : ``) +
     `</Font></Text>`;
 

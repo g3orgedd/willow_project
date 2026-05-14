@@ -321,12 +321,15 @@ function makeFieldGroup(field) {
   group.on("click", (e) => { e.cancelBubble = true; selectField(field.name, { additive: !!e.evt.shiftKey, toggle: !!e.evt.shiftKey }); renderUI(); });
 
   group.on("dragmove", () => {
-    if (!elToggleSnap.checked) return;
-    const snapped = snapPoint(group.x(), group.y());
-    group.position(snapped);
+    if (elToggleSnap.checked) {
+      const snapped = snapPoint(group.x(), group.y());
+      group.position(snapped);
+    }
+    snapGroupToElementAlignment(group);
   });
 
   group.on("dragend", () => {
+    clearAlignmentGuides();
     pushHistory();
     const geomNew = pxGeomToInternal(group.x(), group.y(), rect.width(), rect.height());
     field.geom.x = geomNew.x;
@@ -342,6 +345,13 @@ function makeFieldGroup(field) {
 
 const PREVIEW_TEXT_FONT_FAMILY = `Arial, "Liberation Sans", Helvetica, sans-serif`;
 const PREVIEW_TEXT_PROBE_FONT_SIZE = 100;
+const PREVIEW_TEXT_MIN_FONT_SIZE = 1;
+const PREVIEW_TEXT_FONT_MM_PER_PITCH = 0.33;
+const PREVIEW_TEXT_CLARISOFT_OFFSET_X_MM = 0.42;
+const PREVIEW_TEXT_CLARISOFT_OFFSET_Y_MM = 0.50;
+const PREVIEW_TEXT_CLARISOFT_WIDTH_SCALE = 1.049;
+const PREVIEW_TEXT_RIGHT_CLIP_GUARD_PX = 3;
+const PREVIEW_TEXT_CLIP_DEBUG = globalThis.CIFF_TEXT_PREVIEW_DEBUG === true || globalThis.CIFF_TEXT_CLIP_DEBUG === true;
 
 function measurePreviewTextBounds(text, options) {
   const probe = new Konva.Text({
@@ -361,6 +371,53 @@ function measurePreviewTextBounds(text, options) {
   return probe.getClientRect({ skipShadow: true, skipStroke: true });
 }
 
+function clarisoftFontSizeToCanvasPx(pitch) {
+  const normalizedPitch = Math.max(1, Number(pitch) || 10);
+  return Math.max(PREVIEW_TEXT_MIN_FONT_SIZE, mmToPx(normalizedPitch * PREVIEW_TEXT_FONT_MM_PER_PITCH));
+}
+
+function logPreviewTextClipDebug(field, textValue, textStyle, wPx, hPx, node) {
+  if (!PREVIEW_TEXT_CLIP_DEBUG || !field || field.fldType === "Barcode") return;
+
+  console.debug("[text-clip-preview]", {
+    field: field.name,
+    textValue,
+    sourceFieldWidth: field.geom?.w,
+    convertedPreviewWidth: Number(wPx.toFixed(3)),
+    convertedPreviewHeight: Number(hPx.toFixed(3)),
+    finalKonvaTextWidth: Number(textStyle.width.toFixed(3)),
+    measuredTextWidth: Number((textStyle.measuredTextBounds.width * textStyle.scaleX).toFixed(3)),
+    finalFontSize: Number(textStyle.fontSize.toFixed(3)),
+    fontFamily: textStyle.fontFamily,
+    pixelsPerMm: Number(getPixelsPerMm().toFixed(3)),
+    devicePixelRatio: window.devicePixelRatio || 1,
+    estimatedCanvasDpi: Number((96 * (window.devicePixelRatio || 1)).toFixed(3)),
+    zoomPct,
+    stageScale: {
+      x: stage?.scaleX?.() ?? 1,
+      y: stage?.scaleY?.() ?? 1
+    },
+    nodeScale: {
+      x: node?.scaleX?.() ?? 1,
+      y: node?.scaleY?.() ?? 1
+    },
+    clipEnabled: false,
+    wrap: "none",
+    ellipsis: false,
+    calculatedSafetyPadding: textStyle.rightClipGuardPx,
+    clarisoftCalibration: {
+      offsetXmm: PREVIEW_TEXT_CLARISOFT_OFFSET_X_MM,
+      offsetYmm: PREVIEW_TEXT_CLARISOFT_OFFSET_Y_MM,
+      widthScale: PREVIEW_TEXT_CLARISOFT_WIDTH_SCALE
+    },
+    fontSizeConversion: {
+      sourcePitch: textStyle.sourcePitch,
+      mmPerPitch: PREVIEW_TEXT_FONT_MM_PER_PITCH,
+      sourceTextHeightMm: Number(internalToMm(field.geom?.h ?? 0).toFixed(3))
+    }
+  });
+}
+
 function getPreviewTextStyle(field, wPx, hPx, previewText = "") {
   const isDM = field.fldType === "Barcode" && field.barcode?.dataMatrix;
   if (isDM) {
@@ -375,31 +432,38 @@ function getPreviewTextStyle(field, wPx, hPx, previewText = "") {
     };
   }
 
-  const pitch = Math.max(1, Number(field.text?.pitch ?? 10));
-  const xMag = Math.max(1, Number(field.text?.xMag ?? 100));
+  const rawXMag = field.text?.xMag == null ? NaN : Number(field.text.xMag);
+  const pitch = getEffectiveTextPitch(field, 10);
+  const xMag = Number.isFinite(rawXMag) ? Math.max(1, rawXMag) : 100;
   const paddingX = Math.max(0.5, Math.min(1.25, hPx * 0.018));
   const availableWidth = Math.max(0, wPx - paddingX * 2);
   const availableHeight = Math.max(0, hPx);
-  const pitchFactor = Math.max(0.1, pitch / 10);
-  const scaleX = xMag / 100;
+  const scaleX = (xMag / 100) * PREVIEW_TEXT_CLARISOFT_WIDTH_SCALE;
   const letterSpacing = 0;
   const lineHeight = 1;
-  const probeBounds = measurePreviewTextBounds(previewText, {
-    fontSize: PREVIEW_TEXT_PROBE_FONT_SIZE,
+  const fontSize = clarisoftFontSizeToCanvasPx(pitch);
+  const measuredTextBounds = measurePreviewTextBounds(previewText, {
+    fontSize,
     fontFamily: PREVIEW_TEXT_FONT_FAMILY,
     lineHeight,
     letterSpacing
   });
-  const targetInkHeight = Math.max(1, availableHeight * pitchFactor);
-  const maxInkWidth = Math.max(1, availableWidth / Math.max(0.01, scaleX));
-  const fontSizeByHeight = PREVIEW_TEXT_PROBE_FONT_SIZE * (targetInkHeight / Math.max(1, probeBounds.height));
-  const fontSizeByWidth = PREVIEW_TEXT_PROBE_FONT_SIZE * (maxInkWidth / Math.max(1, probeBounds.width));
-  const fontSize = Math.max(5, Math.min(fontSizeByHeight, fontSizeByWidth));
+  const baseWidth = availableWidth / Math.max(0.01, scaleX);
+  // Konva.Text clips exactly at width; tiny sub-pixel differences at different
+  // zoom levels can hide the last glyph. Keep this guard preview-only.
+  const rightClipGuardPx = PREVIEW_TEXT_RIGHT_CLIP_GUARD_PX;
+  const localClipGuardPx = rightClipGuardPx / Math.max(0.01, scaleX);
+  const previewTextWidth = Math.ceil(Math.max(
+    baseWidth + localClipGuardPx,
+    measuredTextBounds.width + localClipGuardPx
+  ));
 
   return {
     x: 0,
     y: 0,
-    width: availableWidth / Math.max(0.01, scaleX),
+    width: previewTextWidth,
+    selfWidth: baseWidth,
+    selfHeight: availableHeight,
     height: Math.max(availableHeight, fontSize * lineHeight + 2),
     fontSize,
     lineHeight,
@@ -408,14 +472,19 @@ function getPreviewTextStyle(field, wPx, hPx, previewText = "") {
     verticalAlign: "top",
     fontFamily: PREVIEW_TEXT_FONT_FAMILY,
     letterSpacing,
-    paddingX
+    paddingX,
+    contentOffsetX: mmToPx(PREVIEW_TEXT_CLARISOFT_OFFSET_X_MM),
+    contentOffsetY: mmToPx(PREVIEW_TEXT_CLARISOFT_OFFSET_Y_MM),
+    measuredTextBounds,
+    rightClipGuardPx,
+    sourcePitch: pitch
   };
 }
 
 function alignTextPreviewNode(node, textStyle, wPx, hPx) {
   const rect = node.getClientRect({ skipShadow: true, skipStroke: true });
-  const targetX = textStyle.paddingX;
-  const targetY = Math.max(0, (hPx - rect.height) / 2);
+  const targetX = textStyle.paddingX + textStyle.contentOffsetX;
+  const targetY = Math.max(0, (hPx - rect.height) / 2) + textStyle.contentOffsetY;
   node.x(node.x() + (targetX - rect.x));
   node.y(node.y() + (targetY - rect.y));
 }
@@ -447,6 +516,13 @@ function makePreviewNode(field, wPx, hPx, now = new Date()) {
     perfectDrawEnabled: false
   });
   alignTextPreviewNode(node, textStyle, wPx, hPx);
+  node.getSelfRect = () => ({
+    x: -(node.x() || 0) / Math.max(0.01, node.scaleX?.() ?? 1),
+    y: -(node.y() || 0),
+    width: wPx / Math.max(0.01, node.scaleX?.() ?? 1),
+    height: hPx
+  });
+  logPreviewTextClipDebug(field, previewText, textStyle, wPx, hPx, node);
   return node;
 }
 
@@ -596,12 +672,12 @@ function getNearestDataMatrixModuleSizeForGeom(field, wPx, hPx, now = new Date()
   return normalizeDataMatrixModuleSizeValue((widthModule + heightModule) / 2);
 }
 function normalizeDataMatrixSymbolSizeName(symbolSize) {
-  return String(symbolSize || "Auto").trim().toUpperCase();
+  return normalizeDataMatrixSymbolSizeValue(symbolSize, "Auto");
 }
 
 function resolveDataMatrixSymbolInfo(symbolSize, dataCodewordCount) {
   const normalized = normalizeDataMatrixSymbolSizeName(symbolSize);
-  if (normalized === "AUTO") {
+  if (normalized === "Auto") {
     const selected = DATA_MATRIX_SYMBOLS.find((info) => dataCodewordCount <= info.dataCodewords) || DATA_MATRIX_SYMBOLS[DATA_MATRIX_SYMBOLS.length - 1];
     return DATA_MATRIX_SYMBOLS_BY_NAME.get(selected.name) || selected;
   }
@@ -1278,7 +1354,7 @@ function makeListItem(field) {
 
   const supporting = document.createElement("div");
   supporting.className = "listItem__supporting";
-  supporting.textContent = field.fldType;
+  supporting.textContent = getFieldSubtypeLabel(field);
 
   const trailing = document.createElement("span");
   trailing.className = "badge";
@@ -1345,7 +1421,7 @@ function renderSelectionPanels() {
   elPropsPanel.innerHTML = "";
 
   elPropsPanel.appendChild(buildCommonProps(f));
-  elPropsPanel.appendChild(document.createElement("div")).className = "hr";
+  elPropsPanel.appendChild(document.createElement("div")).className = "hr1";
 
   if (f.fldType === "Barcode" && f.barcode?.dataMatrix) {
     elPropsPanel.appendChild(buildBarcodeProps(f));

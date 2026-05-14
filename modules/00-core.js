@@ -14,6 +14,35 @@ const MM_TO_PX_BASE = 12;          // 1mm -> px at zoom=100%
 const INTERNAL_PER_MM = 100;       // CIFF units: 0.01mm
 const SNAP_MM = 0.10;              // snap step in mm
 const GRID_MM = 1.0;               // grid step in mm
+const ALIGNMENT_SNAP_THRESHOLD_PX = 5;
+const CLARISOFT_TEXT_FIELD_HEIGHT_MM_PER_PITCH = 0.4;
+
+function normalizeTextPitchValue(value) {
+  if (value == null || value === "") return null;
+  const next = Math.round(Number(value));
+  return Number.isFinite(next) && next > 0 ? next : null;
+}
+
+function inferTextPitchFromFieldHeight(field) {
+  const heightInternal = Number(field?.geom?.h);
+  if (!Number.isFinite(heightInternal) || heightInternal <= 0) return null;
+  const heightMm = heightInternal / INTERNAL_PER_MM;
+  const pitch = Math.round(heightMm / CLARISOFT_TEXT_FIELD_HEIGHT_MM_PER_PITCH);
+  return pitch > 0 ? pitch : null;
+}
+
+function getEffectiveTextPitch(field, fallback = 10) {
+  const explicitPitch = normalizeTextPitchValue(field?.text?.pitch);
+  const inferredPitch = inferTextPitchFromFieldHeight(field);
+  if (explicitPitch == null) return inferredPitch ?? fallback;
+  // Some Clarisoft templates omit Pitch during copy-like operations in a way
+  // that arrives as our default 10. If H clearly describes another pitch,
+  // use that Clarisoft geometry-derived value for preview/properties.
+  if (explicitPitch === fallback && inferredPitch != null && Math.abs(inferredPitch - explicitPitch) >= 2) {
+    return inferredPitch;
+  }
+  return explicitPitch;
+}
 
 // DataMatrix profiles (you can adjust fixedFields)
 const DM_PROFILES = {
@@ -35,6 +64,17 @@ const DM_HELPER_FIELD_NAMES = [...new Set(Object.values(DM_PROFILES).flatMap((pr
 ]))];
 
 const DATA_MATRIX_SYMBOLS = [
+  {
+    name: "20X20",
+    symbolRows: 20,
+    symbolCols: 20,
+    dataRegionRows: 18,
+    dataRegionCols: 18,
+    regionRows: 1,
+    regionCols: 1,
+    dataCodewords: 22,
+    errorCodewords: 18
+  },
   {
     name: "22X22",
     symbolRows: 22,
@@ -63,6 +103,7 @@ const DATA_MATRIX_SYMBOLS_BY_NAME = new Map(DATA_MATRIX_SYMBOLS.map((info) => [i
   dataRows: info.dataRegionRows * info.regionRows,
   dataCols: info.dataRegionCols * info.regionCols
 }]));
+const DATA_MATRIX_SYMBOL_SIZE_OPTIONS = [...DATA_MATRIX_SYMBOLS.map((info) => info.name), "Auto"];
 const DATA_MATRIX_MODULE_SIZES = Array.from({ length: 60 }, (_, index) => Number((((index + 1) / 12)).toFixed(2)));
 const ALLOWED_ORIENTATIONS = [0, 90, 180, 270];
 const TIME_TEXT_FORMATS = ["HH:mm", "hh:mm", "h:mm", "HH:mm:ss", "h:m:s", "hh:mm:ss"];
@@ -166,6 +207,14 @@ function isUserEnteredTextField(field) {
   return field?.fldType === "FixedText" && getTextEntryMode(field) === "user";
 }
 
+function getFieldSubtypeLabel(field) {
+  if (!field) return "";
+  if (field.fldType === "FixedText") {
+    return isUserEnteredTextField(field) ? "UserEnteredText" : "FixedText";
+  }
+  return field.fldType || "";
+}
+
 function wantsVarTextStructure(field) {
   if (!field?.data) return false;
   if (field.fldType === "FixedText") return isUserEnteredTextField(field);
@@ -178,6 +227,14 @@ function getStoredTextFieldValue(field) {
     return field.data.userEnterData || field.data.defaultValue || field.calcData || "";
   }
   return field.calcData || field.data?.defaultValue || field.data?.userEnterData || "";
+}
+
+function normalizeDataMatrixSymbolSizeValue(value, fallback = "Auto") {
+  const raw = String(value ?? "").trim();
+  if (!raw) return fallback;
+  const normalized = raw.toUpperCase();
+  if (normalized === "AUTO") return "Auto";
+  return DATA_MATRIX_SYMBOLS_BY_NAME.get(normalized)?.name ?? normalized;
 }
 
 // history (simple snapshot)
@@ -210,6 +267,7 @@ const elRulerLeft = $("rulerLeft");
 
 const elToggleGrid = $("toggleGrid");
 const elToggleSnap = $("toggleSnap");
+const elToggleAlign = $("toggleAlign");
 const elZoomRange = $("zoomRange");
 const elZoomLabel = $("zoomLabel");
 const elNewTemplateModal = $("newTemplateModal");
@@ -218,7 +276,7 @@ const elNewTemplatePrintMode = $("newTemplatePrintMode");
 const elNewTemplateWidth = $("newTemplateWidth");
 const elNewTemplateHeight = $("newTemplateHeight");
 // ---------- Konva ----------
-let stage, gridLayer, objLayer, uiLayer, transformer, selectionRect;
+let stage, gridLayer, objLayer, uiLayer, transformer, selectionRect, alignmentGuideGroup;
 let zoomPct = 100;
 let isSpaceDown = false;
 let isPanning = false;
