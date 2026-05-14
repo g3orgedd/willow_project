@@ -1,4 +1,6 @@
-﻿function initCanvas() {
+﻿const Konva = window.Konva;
+
+function initCanvas() {
   const rect = elCanvasHost.getBoundingClientRect();
 
   stage = new Konva.Stage({
