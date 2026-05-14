@@ -155,6 +155,7 @@ textarea {
 
 .topbar__actions--utility {
   justify-content: flex-end;
+  min-width: 800px;
 }
 
 .brand {
