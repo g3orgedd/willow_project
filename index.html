@@ -47,18 +47,18 @@
       </div>
 
       <div class="topbar__actions topbar__actions--primary">
-        <button id="btnNewTemplate" class="btn btn--tonal topbarAction" type="button">
+        <button id="btnNewTemplate" class="btn btn--tonal topbarAction" type="button" aria-label="Create template" title="Create template">
           <img class="buttonIcon" src="./resourses/add_circle_24dp.svg" alt="" aria-hidden="true" />
           <span>Create</span>
         </button>
 
-        <button id="btnOpenFile" class="btn btn--ghost topbarAction" type="button">
+        <button id="btnOpenFile" class="btn btn--ghost topbarAction" type="button" aria-label="Open file" title="Open file">
           <img class="buttonIcon" src="./resourses/upload_file_24dp.svg" alt="" aria-hidden="true" />
           <span>Open</span>
         </button>
         <input id="fileInput" type="file" accept=".ciff,.xml,text/xml" hidden />
 
-        <button id="btnSave" class="btn btn--primary topbarAction" type="button">
+        <button id="btnSave" class="btn btn--primary topbarAction" type="button" aria-label="Save file" title="Save file">
           <img class="buttonIcon" src="./resourses/save_24dp.svg" alt="" aria-hidden="true" />
           <span>Save</span>
         </button>
@@ -89,7 +89,10 @@
 
         <label class="utilityToggle" for="toggleAlign">
           <input id="toggleAlign" type="checkbox" />
-          <span>Align elements</span>
+          <span class="utilityToggle__label">
+            <span class="utilityToggle__full">Align elements</span>
+            <span class="utilityToggle__short">Align</span>
+          </span>
         </label>
       </div>
 
