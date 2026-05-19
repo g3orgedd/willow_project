@@ -385,6 +385,10 @@ textarea {
   display: none;
 }
 
+.mobilePanToggle {
+  display: none;
+}
+
 .zoom {
   display: flex;
   align-items: center;
@@ -625,6 +629,17 @@ textarea {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.02)),
     var(--workspace-background);
+}
+
+.canvasHost--panMode,
+.canvasHost--panMode canvas {
+  touch-action: none;
+  cursor: grab;
+}
+
+.canvasHost--panning,
+.canvasHost--panning canvas {
+  cursor: grabbing;
 }
 
 .statusbar {
@@ -1301,10 +1316,10 @@ body.modal-open {
 
   .topbar__actions--utility {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-columns: auto 48px minmax(0, 1fr);
     grid-template-areas:
-      "history toggles"
-      "zoom zoom";
+      "history pan toggles"
+      "zoom zoom zoom";
     align-items: stretch;
     justify-content: stretch;
     gap: 8px;
@@ -1324,6 +1339,35 @@ body.modal-open {
     width: 40px;
     min-width: 40px;
     min-height: 40px;
+  }
+
+  .mobilePanToggle {
+    grid-area: pan;
+    display: inline-flex;
+    min-width: 50px;
+    min-height: 50px;
+    padding: 0 12px;
+    border-radius: var(--app-radius-xxl) !important;
+    gap: 8px;
+    color: var(--md-sys-color-on-surface-variant);
+  }
+
+  .mobilePanToggle > span {
+    display: none;
+  }
+
+  .mobilePanToggle[aria-pressed="true"],
+  .mobilePanToggle.is-active {
+    background: var(--md-sys-color-primary-container);
+    border-color: color-mix(in srgb, var(--md-sys-color-primary) 55%, var(--md-sys-color-outline-variant));
+    color: var(--md-sys-color-on-primary-container);
+    border-radius: 15px !important;
+  }
+
+  .mobilePanToggle .buttonIcon {
+    width: 20px;
+    height: 20px;
+    flex-basis: 20px;
   }
 
   .utilityGroup--toggles {
@@ -1507,6 +1551,10 @@ body.modal-open {
     gap: 6px;
   }
 
+  .mobilePanToggle {
+    min-height: 46px;
+  }
+
   .utilityGroup--toggles {
     gap: 3px;
     min-height: 46px;
@@ -1549,6 +1597,22 @@ body.modal-open {
 
   .brand__title {
     font-size: 0.9rem;
+  }
+
+  .topbar__actions--utility {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      "history pan"
+      "toggles toggles"
+      "zoom zoom";
+  }
+
+  .mobilePanToggle {
+    justify-content: center;
+  }
+
+  .mobilePanToggle > span {
+    display: inline-flex;
   }
 
   .topbarAction {

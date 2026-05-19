@@ -288,7 +288,7 @@ function makeFieldGroup(field) {
   const isDM = field.fldType === "Barcode" && field.barcode?.dataMatrix;
   const isHidden = !field.printed;
 
-  const group = new Konva.Group({ x: xPx, y: yPx, draggable: true, name: field.name });
+  const group = new Konva.Group({ x: xPx, y: yPx, draggable: !isMobilePanMode, name: field.name });
   const content = new Konva.Group({ name: "PreviewContent" });
 
   const rect = new Konva.Rect({
@@ -318,7 +318,12 @@ function makeFieldGroup(field) {
 
   group.add(content);
 
-  group.on("click", (e) => { e.cancelBubble = true; selectField(field.name, { additive: !!e.evt.shiftKey, toggle: !!e.evt.shiftKey }); renderUI(); });
+  group.on("click", (e) => {
+    e.cancelBubble = true;
+    if (isMobilePanMode) return;
+    selectField(field.name, { additive: !!e.evt.shiftKey, toggle: !!e.evt.shiftKey });
+    renderUI();
+  });
 
   group.on("dragmove", () => {
     if (elToggleSnap.checked) {

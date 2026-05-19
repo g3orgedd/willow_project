@@ -45,10 +45,8 @@ function initCanvas() {
 
   stage.on("mousedown", (e) => {
     if ((e.evt?.button ?? 0) !== 0) return;
-    if (isSpaceDown) {
-      isPanning = true;
-      const p = stage.getPointerPosition();
-      panStart = { x: stage.x(), y: stage.y(), px: p?.x ?? 0, py: p?.y ?? 0 };
+    if (isSpaceDown || isMobilePanMode) {
+      startStagePan(e, { cancelBubble: isMobilePanMode, preventDefault: isMobilePanMode });
       return;
     }
     if (e.target === stage) {
@@ -67,11 +65,7 @@ function initCanvas() {
     if (!p) return;
 
     if (isPanning && panStart) {
-      const dx = p.x - panStart.px;
-      const dy = p.y - panStart.py;
-      stage.position({ x: panStart.x + dx, y: panStart.y + dy });
-      stage.batchDraw();
-      renderRulers();
+      updateStagePan();
       return;
     }
 
@@ -124,8 +118,25 @@ function initCanvas() {
       uiLayer.batchDraw();
     }
 
-    isPanning = false;
-    panStart = null;
+    stopStagePan();
+  });
+
+  stage.on("touchstart", (e) => {
+    if (!isMobilePanMode) return;
+    const touches = e.evt?.touches;
+    if (touches && touches.length !== 1) return;
+    startStagePan(e, { cancelBubble: true, preventDefault: true });
+  });
+
+  stage.on("touchmove", (e) => {
+    if (!isMobilePanMode || !isPanning) return;
+    updateStagePan(e, { cancelBubble: true, preventDefault: true });
+  });
+
+  stage.on("touchend touchcancel", (e) => {
+    if (!isMobilePanMode || !isPanning) return;
+    cancelStagePanEvent(e, { cancelBubble: true, preventDefault: true });
+    stopStagePan();
   });
 
   elCanvasHost.addEventListener("wheel", (ev) => {
@@ -150,7 +161,8 @@ function initCanvas() {
     if (matchesPrimaryShortcut(e, "KeyY", "y")) { e.preventDefault(); redo(); }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") { e.preventDefault(); downloadCiff(); }
   });
-  window.addEventListener("keyup", (e) => { if (e.code === "Space") { isSpaceDown = false; isPanning = false; } });
+  window.addEventListener("keyup", (e) => { if (e.code === "Space") { isSpaceDown = false; stopStagePan(); } });
+  window.addEventListener("blur", () => { isSpaceDown = false; stopStagePan(); });
 
   // Transformer transformend => apply resize to internal geometry
   transformer.on("transformend", () => {
@@ -212,6 +224,80 @@ function matchesPrimaryShortcut(e, code, key) {
   return e.code === code || String(e.key || "").toLowerCase() === key;
 }
 
+function cancelStagePanEvent(e, options = {}) {
+  if (options.cancelBubble && e) e.cancelBubble = true;
+  if (options.preventDefault && e?.evt?.cancelable) e.evt.preventDefault();
+}
+
+function startStagePan(e, options = {}) {
+  cancelStagePanEvent(e, options);
+  const p = stage.getPointerPosition();
+  if (!p) return;
+
+  if (isSelectionBoxActive) {
+    isSelectionBoxActive = false;
+    selectionStart = null;
+    selectionBoxAdditive = false;
+    selectionRect.visible(false);
+    uiLayer.batchDraw();
+  }
+
+  clearAlignmentGuides();
+  isPanning = true;
+  panStart = { x: stage.x(), y: stage.y(), px: p.x, py: p.y };
+  elCanvasHost?.classList.add("canvasHost--panning");
+}
+
+function updateStagePan(e, options = {}) {
+  cancelStagePanEvent(e, options);
+  const p = stage.getPointerPosition();
+  if (!p || !panStart) return;
+
+  const dx = p.x - panStart.px;
+  const dy = p.y - panStart.py;
+  stage.position({ x: panStart.x + dx, y: panStart.y + dy });
+  stage.batchDraw();
+  renderRulers();
+}
+
+function stopStagePan() {
+  isPanning = false;
+  panStart = null;
+  elCanvasHost?.classList.remove("canvasHost--panning");
+}
+
+function isMobilePanControlAvailable() {
+  return !window.matchMedia || window.matchMedia("(max-width: 768px)").matches;
+}
+
+function syncMobilePanModeUI() {
+  elBtnPanMode?.classList.toggle("is-active", isMobilePanMode);
+  elBtnPanMode?.setAttribute("aria-pressed", String(isMobilePanMode));
+  elCanvasHost?.classList.toggle("canvasHost--panMode", isMobilePanMode);
+}
+
+function updateFieldDraggingForPanMode() {
+  state.fields.forEach((field) => field._konva?.draggable(!isMobilePanMode));
+  transformer?.listening(!isMobilePanMode);
+  transformer?.visible(!isMobilePanMode);
+  if (isMobilePanMode) {
+    selectionRect?.visible(false);
+    isSelectionBoxActive = false;
+    selectionStart = null;
+    selectionBoxAdditive = false;
+    clearAlignmentGuides();
+  }
+  objLayer?.batchDraw();
+  uiLayer?.batchDraw();
+}
+
+function setMobilePanMode(enabled) {
+  isMobilePanMode = !!enabled && isMobilePanControlAvailable();
+  if (!isMobilePanMode) stopStagePan();
+  updateFieldDraggingForPanMode();
+  syncMobilePanModeUI();
+}
+
 // ---------- UI init ----------
 function initUI() {
   // Tabs
@@ -252,6 +338,16 @@ function initUI() {
   elZoomRange.addEventListener("input", () => setZoom(parseInt(String(elZoomRange.value), 10)));
   $("zoomIn").addEventListener("click", () => setZoom(clamp(25, 400, zoomPct + 10)));
   $("zoomOut").addEventListener("click", () => setZoom(clamp(25, 400, zoomPct - 10)));
+  elBtnPanMode?.addEventListener("click", () => setMobilePanMode(!isMobilePanMode));
+
+  const mobilePanQuery = window.matchMedia?.("(max-width: 768px)");
+  const syncMobilePanAvailability = () => {
+    if (mobilePanQuery && !mobilePanQuery.matches) setMobilePanMode(false);
+    else syncMobilePanModeUI();
+  };
+  if (mobilePanQuery?.addEventListener) mobilePanQuery.addEventListener("change", syncMobilePanAvailability);
+  else mobilePanQuery?.addListener?.(syncMobilePanAvailability);
+  syncMobilePanAvailability();
 
   elToggleGrid.addEventListener("change", () => renderGrid());
   elToggleSnap.addEventListener("change", () => {/* used during drag */});
