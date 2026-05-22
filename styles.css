@@ -55,6 +55,8 @@
   --app-shadow-2: 0 12px 32px rgba(0, 0, 0, 0.26);
   --workspace-background: #191b20;
   --canvas-background: #fdf8f4;
+  --ruler-divider: color-mix(in srgb, var(--md-sys-color-outline-variant) 88%, transparent);
+  --ruler-edge-highlight: color-mix(in srgb, var(--md-sys-color-on-surface) 6%, transparent);
 }
 
 * {
@@ -116,6 +118,17 @@ textarea {
   border: 1px solid var(--md-sys-color-outline-variant);
   border-radius: var(--app-radius-xl);
   box-shadow: var(--app-shadow-1);
+}
+
+.mobilePanelMenuToggle.mobilePanelMenuToggle,
+.mobilePanelMenuOverlay,
+.mobilePanelMenu {
+  display: none;
+}
+
+.mobilePanelMenuOverlay[hidden],
+.mobilePanelMenu[hidden] {
+  display: none !important;
 }
 
 .topbar {
@@ -448,7 +461,7 @@ textarea {
 }
 
 .zoom__label {
-  /* min-width: 46px; */
+  min-width: 40px;
   text-align: right;
   font-size: 0.875rem;
   color: var(--md-sys-color-on-surface-variant);
@@ -591,14 +604,17 @@ textarea {
 
 .rulerCorner,
 .rulerCanvas {
-  background: linear-gradient(180deg, #f0f3f8 0%, #dde2ea 100%);
+  background: color-mix(in srgb, var(--md-sys-color-surface-container-highest) 70%, transparent);
 }
 
 .rulerCorner {
   grid-column: 1;
   grid-row: 1;
-  border-right: 1px solid rgba(36, 44, 61, 0.14);
-  border-bottom: 1px solid rgba(36, 44, 61, 0.14);
+  position: relative;
+  border-top-left-radius: inherit;
+  border-right: 2px solid var(--ruler-divider);
+  border-bottom: 2px solid var(--ruler-divider);
+  /* box-shadow: inset 1px 1px 0 var(--ruler-edge-highlight); */
 }
 
 .rulerCanvas {
@@ -610,13 +626,17 @@ textarea {
 .rulerCanvas--top {
   grid-column: 2;
   grid-row: 1;
-  border-bottom: 1px solid rgba(36, 44, 61, 0.14);
+  border-top-right-radius: inherit;
+  border-bottom: 1px solid var(--ruler-divider);
+  box-shadow: inset 0 1px 0 var(--ruler-edge-highlight);
 }
 
 .rulerCanvas--left {
   grid-column: 1;
   grid-row: 2;
-  border-right: 1px solid rgba(36, 44, 61, 0.14);
+  border-bottom-left-radius: inherit;
+  border-right: 1px solid var(--ruler-divider);
+  box-shadow: inset 1px 0 0 var(--ruler-edge-highlight);
 }
 
 .canvasHost {
@@ -788,6 +808,11 @@ textarea {
   overflow: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
+
+  border-radius: var(--app-radius-xxl);
+  padding: 10px;
+  background: color-mix(in srgb, var(--md-sys-color-surface-container-highest) 70%, transparent);
+  border: 1px solid var(--md-sys-color-outline-variant);
 }
 
 .list::-webkit-scrollbar {
@@ -803,7 +828,7 @@ textarea {
   border-radius: var(--app-radius-lg);
   background: var(--md-sys-color-surface-container-high);
   color: var(--md-sys-color-on-surface);
-  padding: 12px 14px;
+  padding: 10px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -839,7 +864,7 @@ textarea {
 }
 
 .listItem__supporting {
-  font-size: 0.875rem;
+  font-size: 12px;
   color: var(--md-sys-color-on-surface-variant);
 }
 
@@ -1028,7 +1053,7 @@ textarea {
   max-height: calc(100vh - 48px);
   overflow: auto;
   padding: 20px;
-  box-shadow: var(--app-shadow-2);
+  /* box-shadow: var(--app-shadow-2); */
 }
 
 .modal__header {
@@ -1129,7 +1154,7 @@ body.modal-open {
   }
 
   .panel--left .toolgrid {
-    gap: 2px;
+    gap: 3px;
   }
 
   .panel--left .toolButton {
@@ -1239,7 +1264,7 @@ body.modal-open {
 
   .topbar__brandCluster {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
     gap: 8px;
     height: auto;
@@ -1286,7 +1311,7 @@ body.modal-open {
     flex-wrap: nowrap;
     gap: 4px;
     padding: 4px;
-    border-radius: 24px;
+    border-radius: var(--app-radius-xxl);
   }
 
   .topbarAction {
@@ -1312,6 +1337,15 @@ body.modal-open {
     width: 20px;
     height: 20px;
     flex-basis: 20px;
+  }
+
+  .mobilePanelMenuToggle.mobilePanelMenuToggle {
+    display: inline-flex;
+    width: 48px;
+    min-width: 48px;
+    min-height: 48px;
+    padding: 0;
+    border-radius: 24px;
   }
 
   .topbar__actions--utility {
@@ -1368,6 +1402,14 @@ body.modal-open {
     width: 20px;
     height: 20px;
     flex-basis: 20px;
+  }
+
+  .modal {
+    padding: 10px !important;
+  }
+
+  .modal__backdrop {
+    background: var(--md-sys-color-surface-container-lowest);
   }
 
   .utilityGroup--toggles {
@@ -1466,6 +1508,7 @@ body.modal-open {
   }
 
   .app {
+    grid-template-areas: "main";
     gap: 10px;
     max-width: 100vw;
     padding: 0 8px 12px;
@@ -1509,6 +1552,89 @@ body.modal-open {
     padding: 0 6px;
     font-size: 0.78rem;
     text-overflow: ellipsis;
+  }
+
+  .mobilePanelMenuOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    display: block;
+    background: color-mix(in srgb, var(--md-sys-color-scrim) 78%, transparent);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 180ms ease;
+  }
+
+  .mobilePanelMenuOverlay.is-open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .mobilePanelMenu {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 90;
+    display: flex;
+    /* width: min(380px, 90vw); */
+    max-width: 100vw;
+    min-height: 0;
+    flex-direction: column;
+    background: var(--md-sys-color-surface);
+    border-right: 1px solid var(--md-sys-color-outline-variant);
+    border-radius: 0 24px 24px 0;
+    box-shadow: var(--app-shadow-2);
+    transform: translateX(-100%);
+    transition: transform 220ms ease;
+  }
+
+  .mobilePanelMenu.is-open {
+    transform: translateX(0);
+  }
+
+  .mobilePanelMenu__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 14px 12px 18px;
+    border-bottom: 1px solid var(--md-sys-color-outline-variant);
+  }
+
+  .mobilePanelMenu__content {
+    min-height: 0;
+    overflow-y: auto;
+    padding: 12px;
+    scrollbar-width: none;
+  }
+
+  .mobilePanelMenu__content::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+
+  .mobilePanelMenu__slot {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+  }
+
+  .mobilePanelMenu__slot + .mobilePanelMenu__slot {
+    margin-top: 12px;
+  }
+
+  .mobilePanelMenu .panel {
+    display: flex;
+    width: 100%;
+    max-height: none;
+    flex: 0 0 auto;
+    overflow: visible;
+  }
+
+  .mobilePanelMenu .panel--right .tabview--active {
+    max-height: none;
+    overflow: visible;
   }
 }
 

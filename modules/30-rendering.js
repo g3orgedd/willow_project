@@ -131,6 +131,61 @@ function getRulerConfig() {
   return { minorStep: 5, mediumStep: 10, labelStep: 10 };
 }
 
+function getCssColorVar(name, fallback) {
+  const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return value || fallback;
+}
+
+function colorWithAlpha(color, alpha) {
+  const value = String(color || "").trim();
+  const normalizedAlpha = Math.max(0, Math.min(1, alpha));
+
+  if (value.startsWith("#")) {
+    let hex = value.slice(1);
+    if (hex.length === 3) {
+      hex = hex.split("").map((char) => char + char).join("");
+    }
+    if (hex.length >= 6) {
+      const r = parseInt(hex.slice(0, 2), 16);
+      const g = parseInt(hex.slice(2, 4), 16);
+      const b = parseInt(hex.slice(4, 6), 16);
+      if ([r, g, b].every(Number.isFinite)) {
+        return `rgba(${r}, ${g}, ${b}, ${normalizedAlpha})`;
+      }
+    }
+  }
+
+  const rgbMatch = value.match(/^rgba?\(([^)]+)\)$/i);
+  if (rgbMatch) {
+    const channels = rgbMatch[1].split(",").map((part) => Number(part.trim()));
+    if (channels.length >= 3 && channels.slice(0, 3).every(Number.isFinite)) {
+      return `rgba(${channels[0]}, ${channels[1]}, ${channels[2]}, ${normalizedAlpha})`;
+    }
+  }
+
+  return value;
+}
+
+function getRulerTheme() {
+  const surfaceContainerHighest = getCssColorVar("--md-sys-color-surface-container-highest", "#33353d");
+  const outline = getCssColorVar("--md-sys-color-outline", "#8f909a");
+  const outlineVariant = getCssColorVar("--md-sys-color-outline-variant", "#45464f");
+  const onSurface = getCssColorVar("--md-sys-color-on-surface", "#e4e2e8");
+  const onSurfaceVariant = getCssColorVar("--md-sys-color-on-surface-variant", "#c6c6d0");
+
+  return {
+    background: colorWithAlpha(surfaceContainerHighest, 0.7),
+    divider: colorWithAlpha(outlineVariant, 0.9),
+    edgeHighlight: colorWithAlpha(onSurface, 0.05),
+    tickMinor: colorWithAlpha(outlineVariant, 0.58),
+    tickMedium: colorWithAlpha(outline, 0.54),
+    tickMajor: colorWithAlpha(outline, 0.78),
+    tickZero: colorWithAlpha(onSurface, 0.72),
+    label: colorWithAlpha(onSurfaceVariant, 0.92),
+    labelStrong: colorWithAlpha(onSurface, 0.88)
+  };
+}
+
 function renderRulers() {
   if (!stage) return;
 
@@ -140,29 +195,54 @@ function renderRulers() {
 
   const cfg = getRulerConfig();
   const pxPerMm = getPixelsPerMm();
+  const theme = getRulerTheme();
 
-  drawTopRuler(top.ctx, top.width, top.height, cfg, pxPerMm);
-  drawLeftRuler(left.ctx, left.width, left.height, cfg, pxPerMm);
+  drawTopRuler(top.ctx, top.width, top.height, cfg, pxPerMm, theme);
+  drawLeftRuler(left.ctx, left.width, left.height, cfg, pxPerMm, theme);
 }
 
-function drawTopRuler(ctx, width, height, cfg, pxPerMm) {
+function drawRulerSurface(ctx, width, height, theme, axis) {
   ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = "#e7ecf3";
+
+  ctx.fillStyle = theme.background;
   ctx.fillRect(0, 0, width, height);
 
-  ctx.strokeStyle = "rgba(21, 27, 40, 0.16)";
+  ctx.lineCap = "butt";
+  ctx.strokeStyle = theme.edgeHighlight;
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.moveTo(0, height - 0.5);
-  ctx.lineTo(width, height - 0.5);
+  if (axis === "x") {
+    ctx.moveTo(0, 0.5);
+    ctx.lineTo(width, 0.5);
+  } else {
+    ctx.moveTo(0.5, 0);
+    ctx.lineTo(0.5, height);
+  }
   ctx.stroke();
+
+  ctx.strokeStyle = theme.divider;
+  ctx.beginPath();
+  if (axis === "x") {
+    ctx.moveTo(0, height - 0.5);
+    ctx.lineTo(width, height - 0.5);
+  } else {
+    ctx.moveTo(width - 0.5, 0);
+    ctx.lineTo(width - 0.5, height);
+  }
+  ctx.stroke();
+}
+
+function drawTopRuler(ctx, width, height, cfg, pxPerMm, theme) {
+  drawRulerSurface(ctx, width, height, theme, "x");
 
   const startMm = Math.floor(pxToMm(-stage.x()) / cfg.minorStep) * cfg.minorStep;
   const endMm = Math.ceil(pxToMm(width - stage.x()) / cfg.minorStep) * cfg.minorStep;
+  const majorTick = Math.min(14, Math.max(8, height - 16));
+  const mediumTick = Math.max(6, Math.round(majorTick * 0.72));
+  const minorTick = Math.max(4, Math.round(majorTick * 0.45));
 
-  ctx.strokeStyle = "#1d2533";
-  ctx.fillStyle = "#141822";
-  ctx.font = "11px Segoe UI, Arial, sans-serif";
+  ctx.font = '500 10px "Google Sans Flex", "Segoe UI", Arial, sans-serif';
+  ctx.lineCap = "round";
   ctx.textBaseline = "top";
 
   for (let mm = startMm; mm <= endMm; mm += cfg.minorStep) {
@@ -171,9 +251,12 @@ function drawTopRuler(ctx, width, height, cfg, pxPerMm) {
 
     const isMajor = mm % cfg.labelStep === 0;
     const isMedium = !isMajor && mm % cfg.mediumStep === 0;
-    const tickHeight = isMajor ? 14 : (isMedium ? 10 : 6);
+    const isZero = mm === 0;
+    const tickHeight = isMajor ? majorTick : (isMedium ? mediumTick : minorTick);
     const lineX = Math.round(x) + 0.5;
 
+    ctx.strokeStyle = isZero ? theme.tickZero : (isMajor ? theme.tickMajor : (isMedium ? theme.tickMedium : theme.tickMinor));
+    ctx.lineWidth = isMajor ? 1 : 0.75;
     ctx.beginPath();
     ctx.moveTo(lineX, height);
     ctx.lineTo(lineX, height - tickHeight);
@@ -183,29 +266,26 @@ function drawTopRuler(ctx, width, height, cfg, pxPerMm) {
 
     const label = String(mm);
     const labelWidth = ctx.measureText(label).width;
-    const labelX = clamp(2, width - labelWidth - 2, x - (labelWidth / 2));
-    ctx.fillText(label, labelX, 2);
+    if (width <= labelWidth + 8) continue;
+
+    const labelX = clamp(4, width - labelWidth - 4, x - (labelWidth / 2));
+    ctx.fillStyle = isZero ? theme.labelStrong : theme.label;
+    ctx.fillText(label, labelX, 4);
   }
 }
 
-function drawLeftRuler(ctx, width, height, cfg, pxPerMm) {
-  ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = "#e7ecf3";
-  ctx.fillRect(0, 0, width, height);
-
-  ctx.strokeStyle = "rgba(21, 27, 40, 0.16)";
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(width - 0.5, 0);
-  ctx.lineTo(width - 0.5, height);
-  ctx.stroke();
+function drawLeftRuler(ctx, width, height, cfg, pxPerMm, theme) {
+  drawRulerSurface(ctx, width, height, theme, "y");
 
   const startMm = Math.floor(pxToMm(-stage.y()) / cfg.minorStep) * cfg.minorStep;
   const endMm = Math.ceil(pxToMm(height - stage.y()) / cfg.minorStep) * cfg.minorStep;
+  const majorTick = Math.min(14, Math.max(8, width - 16));
+  const mediumTick = Math.max(6, Math.round(majorTick * 0.72));
+  const minorTick = Math.max(4, Math.round(majorTick * 0.45));
+  const labelOffset = Math.max(9, Math.min(12, width * 0.36));
 
-  ctx.strokeStyle = "#1d2533";
-  ctx.fillStyle = "#141822";
-  ctx.font = "11px Segoe UI, Arial, sans-serif";
+  ctx.font = '500 10px "Google Sans Flex", "Segoe UI", Arial, sans-serif';
+  ctx.lineCap = "round";
   ctx.textBaseline = "middle";
 
   for (let mm = startMm; mm <= endMm; mm += cfg.minorStep) {
@@ -214,9 +294,12 @@ function drawLeftRuler(ctx, width, height, cfg, pxPerMm) {
 
     const isMajor = mm % cfg.labelStep === 0;
     const isMedium = !isMajor && mm % cfg.mediumStep === 0;
-    const tickWidth = isMajor ? 14 : (isMedium ? 10 : 6);
+    const isZero = mm === 0;
+    const tickWidth = isMajor ? majorTick : (isMedium ? mediumTick : minorTick);
     const lineY = Math.round(y) + 0.5;
 
+    ctx.strokeStyle = isZero ? theme.tickZero : (isMajor ? theme.tickMajor : (isMedium ? theme.tickMedium : theme.tickMinor));
+    ctx.lineWidth = isMajor ? 1 : 0.75;
     ctx.beginPath();
     ctx.moveTo(width, lineY);
     ctx.lineTo(width - tickWidth, lineY);
@@ -224,10 +307,17 @@ function drawLeftRuler(ctx, width, height, cfg, pxPerMm) {
 
     if (!isMajor) continue;
 
+    const label = String(mm);
+    const labelWidth = ctx.measureText(label).width;
+    if (height <= labelWidth + 8) continue;
+
+    const labelY = clamp((labelWidth / 2) + 4, height - (labelWidth / 2) - 4, y);
     ctx.save();
-    ctx.translate(12, y);
+    ctx.translate(labelOffset, labelY);
     ctx.rotate(-Math.PI / 2);
-    ctx.fillText(String(mm), 0, 0);
+    ctx.textAlign = "center";
+    ctx.fillStyle = isZero ? theme.labelStrong : theme.label;
+    ctx.fillText(label, 0, 0);
     ctx.restore();
   }
 }

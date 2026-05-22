@@ -36,6 +36,10 @@
 <body>
   <header class="topbar">
     <div class="topbar__brandCluster">
+      <button id="mobilePanelMenuToggle" class="btn btn--ghost btn--icon mobilePanelMenuToggle surface-card" type="button" aria-label="Open panels menu" aria-controls="mobilePanelMenu" aria-expanded="false" title="Panels menu">
+        <img class="iconButton__icon" src="./resourses/menu_24dp.svg" alt="" aria-hidden="true" />
+      </button>
+
       <div class="brand surface-card">
         <div class="brand__icon">
           <img id="logo" src="./resourses/azm_24dp.svg" alt="" aria-hidden="true" />
@@ -265,6 +269,24 @@
       </div>
     </aside>
   </main>
+
+  <div id="mobilePanelMenuOverlay" class="mobilePanelMenuOverlay" hidden></div>
+  <aside id="mobilePanelMenu" class="mobilePanelMenu" aria-hidden="true" aria-label="Panels menu" hidden>
+    <div class="mobilePanelMenu__header">
+      <div>
+        <div class="panel__title">Panels</div>
+        <div class="muted">Tools and settings</div>
+      </div>
+      <button id="mobilePanelMenuClose" class="btn btn--ghost btn--icon" type="button" aria-label="Close panels menu" title="Close">
+        <img class="iconButton__icon" src="./resourses/close_24dp.svg" alt="" aria-hidden="true" />
+      </button>
+    </div>
+
+    <div class="mobilePanelMenu__content">
+      <div id="mobileRightPanelSlot" class="mobilePanelMenu__slot"></div>
+      <div id="mobileLeftPanelSlot" class="mobilePanelMenu__slot"></div>
+    </div>
+  </aside>
 
   <div id="newTemplateModal" class="modal hidden" aria-hidden="true">
     <div class="modal__backdrop" data-modal-close="1"></div>

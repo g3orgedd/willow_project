@@ -298,6 +298,98 @@ function setMobilePanMode(enabled) {
   syncMobilePanModeUI();
 }
 
+function refreshCanvasSizeAfterPanelMove() {
+  if (!stage || !elCanvasHost) return;
+
+  const applySize = () => {
+    const r = elCanvasHost.getBoundingClientRect();
+    if (!r.width || !r.height) return;
+    stage.size({ width: r.width, height: r.height });
+    stage.batchDraw();
+    renderRulers();
+  };
+
+  requestAnimationFrame(applySize);
+  setTimeout(applySize, 240);
+}
+
+function initMobilePanelMenu() {
+  const mobileQuery = window.matchMedia?.("(max-width: 768px)");
+  const menu = $("mobilePanelMenu");
+  const overlay = $("mobilePanelMenuOverlay");
+  const toggle = $("mobilePanelMenuToggle");
+  const closeBtn = $("mobilePanelMenuClose");
+  if (!mobileQuery || !menu || !overlay || !toggle || !closeBtn) return;
+
+  const entries = [
+    { el: document.querySelector(".panel--right"), slot: $("mobileRightPanelSlot") },
+    { el: document.querySelector(".panel--left"), slot: $("mobileLeftPanelSlot") }
+  ].filter((entry) => entry.el && entry.slot)
+    .map((entry) => ({
+      ...entry,
+      parent: entry.el.parentNode,
+      next: entry.el.nextSibling
+    }));
+
+  let isOpen = false;
+  let touchStartX = null;
+
+  const setMenuOpen = (nextOpen) => {
+    isOpen = !!nextOpen && mobileQuery.matches;
+    menu.hidden = !mobileQuery.matches;
+    overlay.hidden = !isOpen;
+    menu.classList.toggle("is-open", isOpen);
+    overlay.classList.toggle("is-open", isOpen);
+    menu.setAttribute("aria-hidden", String(!isOpen));
+    toggle.setAttribute("aria-expanded", String(isOpen));
+  };
+
+  const moveEntry = (entry, toMenu) => {
+    if (toMenu) {
+      if (entry.el.parentNode !== entry.slot) entry.slot.appendChild(entry.el);
+      return;
+    }
+
+    if (entry.el.parentNode !== entry.parent) {
+      entry.parent.insertBefore(entry.el, entry.next);
+    }
+  };
+
+  const syncMenuMode = () => {
+    const mobile = mobileQuery.matches;
+    entries.forEach((entry) => moveEntry(entry, mobile));
+    if (!mobile) setMenuOpen(false);
+    else {
+      menu.hidden = false;
+      menu.setAttribute("aria-hidden", String(!isOpen));
+    }
+    refreshCanvasSizeAfterPanelMove();
+  };
+
+  toggle.addEventListener("click", () => setMenuOpen(!isOpen));
+  closeBtn.addEventListener("click", () => setMenuOpen(false));
+  overlay.addEventListener("click", () => setMenuOpen(false));
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && isOpen) setMenuOpen(false);
+  });
+
+  menu.addEventListener("touchstart", (e) => {
+    touchStartX = e.touches?.[0]?.clientX ?? null;
+  }, { passive: true });
+  menu.addEventListener("touchend", (e) => {
+    const endX = e.changedTouches?.[0]?.clientX;
+    if (touchStartX !== null && Number.isFinite(endX) && touchStartX - endX > 64) {
+      setMenuOpen(false);
+    }
+    touchStartX = null;
+  }, { passive: true });
+
+  if (mobileQuery.addEventListener) mobileQuery.addEventListener("change", syncMenuMode);
+  else mobileQuery.addListener?.(syncMenuMode);
+
+  syncMenuMode();
+}
+
 // ---------- UI init ----------
 function initUI() {
   // Tabs
@@ -377,6 +469,8 @@ function initUI() {
 
   $("btnUndo").addEventListener("click", undo);
   $("btnRedo").addEventListener("click", redo);
+
+  initMobilePanelMenu();
 
   window.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && elNewTemplateModal && !elNewTemplateModal.classList.contains("hidden")) {
