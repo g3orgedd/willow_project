@@ -252,15 +252,8 @@ function mkNum(value, onChange) {
 }
 
 function inputCheckbox(value, onChange, opts = {}) {
-  const wrap = document.createElement("div");
+  const wrap = document.createElement("label");
   wrap.className = "checkboxField";
-
-  const switchEl = document.createElement("md-switch");
-  switchEl.className = "checkboxField__switch";
-  switchEl.setAttribute("aria-label", opts.ariaLabel || opts.label || "Toggle");
-  switchEl.toggleAttribute("selected", !!value);
-  switchEl.toggleAttribute("disabled", !!opts.disabled);
-  switchEl.addEventListener("change", () => onChange(!!switchEl.selected));
 
   if (opts.label) {
     const label = document.createElement("span");
@@ -269,6 +262,23 @@ function inputCheckbox(value, onChange, opts = {}) {
     wrap.appendChild(label);
   }
 
+  const input = document.createElement("input");
+  input.className = "checkboxField__native";
+  input.type = "checkbox";
+  input.checked = !!value;
+  input.disabled = !!opts.disabled;
+  input.setAttribute("aria-label", opts.ariaLabel || opts.label || "Toggle");
+  input.addEventListener("change", () => onChange(!!input.checked));
+
+  const switchEl = document.createElement("span");
+  switchEl.className = "checkboxField__switch";
+  switchEl.setAttribute("aria-hidden", "true");
+
+  const handle = document.createElement("span");
+  handle.className = "checkboxField__handle";
+  switchEl.appendChild(handle);
+
+  wrap.appendChild(input);
   wrap.appendChild(switchEl);
   return wrap;
 }

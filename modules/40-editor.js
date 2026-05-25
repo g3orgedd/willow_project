@@ -1,4 +1,6 @@
 // ---------- Properties builders ----------
+const PRINT_SWITCH_ANIMATION_MS = 220;
+
 function formatMaxCharacters(value) {
   return Number.isSafeInteger(value) ? String(value) : "Not specified";
 }
@@ -179,10 +181,58 @@ function buildMultiSelectionProps(fields) {
   return wrap;
 }
 
+function createPrintControlCard(field) {
+  const card = document.createElement("div");
+  card.className = "printControlCard";
+
+  const copy = document.createElement("div");
+  copy.className = "printControlCard__copy";
+
+  const titleRow = document.createElement("div");
+  titleRow.className = "printControlCard__titleRow";
+
+  const title = document.createElement("div");
+  title.className = "printControlCard__title";
+  title.textContent = "Print output";
+
+  const status = document.createElement("span");
+  status.className = "printControlCard__status";
+
+  const description = document.createElement("div");
+  description.className = "printControlCard__description";
+
+  const syncPrintState = (isPrinted) => {
+    card.dataset.printState = isPrinted ? "printed" : "hidden";
+    status.textContent = isPrinted ? "Printed" : "Hidden";
+    // description.textContent = isPrinted
+    //   ? "Object is included in the printed output."
+    //   : "Object stays in the template, but is excluded from printing.";
+  };
+
+  const control = inputCheckbox(field.printed, (value) => {
+    pushHistory();
+    field.printed = value;
+    syncPrintState(value);
+    window.setTimeout(renderAll, PRINT_SWITCH_ANIMATION_MS);
+  }, { ariaLabel: "Print output" });
+
+  titleRow.appendChild(title);
+  titleRow.appendChild(status);
+  copy.appendChild(titleRow);
+  copy.appendChild(description);
+
+  card.appendChild(copy);
+  card.appendChild(control);
+  syncPrintState(field.printed);
+
+  return card;
+}
+
 function buildCommonProps(f) {
   const wrap = document.createElement("div");
   wrap.className = "form";
 
+  wrap.appendChild(createPrintControlCard(f));
   wrap.appendChild(fieldRow("Name", inputText(f.name, (v) => renameField(f, v))));
   if (f.fldType === "FixedText") {
     wrap.appendChild(fieldRow("Type", buildFixedTextEntryModeSelect(f)));
@@ -190,7 +240,6 @@ function buildCommonProps(f) {
     wrap.appendChild(fieldRow("Type", inputText(f.fldType, () => {}, { disabled: true })));
   }
   wrap.appendChild(fieldRow("Max characters", inputText(formatMaxCharacters(f.data?.maxChars), () => {}, { readOnly: true })));
-  wrap.appendChild(fieldRow("Print", inputCheckbox(f.printed, (v) => { pushHistory(); f.printed = v; renderAll(); }, { ariaLabel: "Print" })));
 
   wrap.appendChild(fieldRow("X (mm)", inputNumber(internalToMm(f.geom.x), (v) => { pushHistory(); f.geom.x = mmToInternal(v); renderAll(); })));
   wrap.appendChild(fieldRow("Y (mm)", inputNumber(internalToMm(f.geom.y), (v) => { pushHistory(); f.geom.y = mmToInternal(v); renderAll(); })));

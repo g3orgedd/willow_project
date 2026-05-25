@@ -212,24 +212,26 @@
     <aside class="panel panel--right surface-card">
       <div class="tabsWrap">
         <div class="tabs" role="tablist" aria-label="Inspector sections">
-          <button class="tab tab--active" id="properies_tab" data-tab="props" type="button" role="tab" aria-selected="true">Properties</button>
+          <button class="tab tab--active" id="object_tab" data-tab="object" type="button" role="tab" aria-selected="true">Object</button>
+          <button class="tab" id="template_tab" data-tab="template" type="button" role="tab" aria-selected="false">Template</button>
           <button class="tab" id="datamatrix_tab" data-tab="datamatrix" type="button" role="tab" aria-selected="false">DataMatrix</button>
-          <button class="tab" id="hidden_tab" data-tab="hidden" type="button" role="tab" aria-selected="false">Hidden</button>
           <button class="tab" id="offsets_tab" data-tab="offsets" type="button" role="tab" aria-selected="false">Offsets</button>
+          <button class="tab" id="validation_tab" data-tab="validation" type="button" role="tab" aria-selected="false">Validation</button>
+          <button class="tab" id="xml_advanced_tab" data-tab="xml-advanced" type="button" role="tab" aria-selected="false">Advanced</button>
         </div>
       </div>
 
-      <div class="panel__section tabview tabview--active" id="tab-props">
+      <div class="panel__section tabview tabview--active" id="tab-object">
         <div class="panel__title">Selected object</div>
-        <div id="propsEmpty" class="muted">Choose an object on the canvas or in the field list.</div>
+        <div id="propsEmpty" class="muted">No object selected<br>Select an object on the canvas or in the field list.</div>
         <div id="propsPanel" class="form hidden"></div>
 
         <div class="sectionAction">
           <button id="btnDelete" class="btn btn--danger btn--wide" type="button" disabled>Delete selected</button>
         </div>
+      </div>
 
-        <div class="hr"></div>
-
+      <div class="panel__section tabview" id="tab-template">
         <div class="sectionBlock">
           <div class="panel__title">Template size</div>
           <div id="templateSizePanel" class="form"></div>
@@ -245,14 +247,8 @@
 
       <div class="panel__section tabview" id="tab-datamatrix">
         <div class="panel__title">DataMatrix</div>
-        <div id="dmEmpty" class="muted">Choose a Barcode/DataMatrix field.</div>
+        <div id="dmEmpty" class="muted">No DataMatrix object found.<br>Create a new DataMatrix or select an existing one.</div>
         <div id="dmPanel" class="form hidden"></div>
-      </div>
-
-      <div class="panel__section tabview" id="tab-hidden">
-        <div class="panel__title">Hidden field editor</div>
-        <div class="muted">Edit values for non-printed fields.</div>
-        <div id="hiddenEditor" class="hiddenEditor"></div>
       </div>
 
       <div class="panel__section tabview" id="tab-offsets">
@@ -266,6 +262,24 @@
           </button>
         </div>
         <div id="offsetsEditor" class="hiddenEditor"></div>
+      </div>
+
+      <div class="panel__section tabview" id="tab-validation">
+        <div class="panel__title">Validation</div>
+        <div class="muted">Validation checks will appear here.</div>
+      </div>
+
+      <div class="panel__section tabview" id="tab-xml-advanced">
+        <div class="panel__title">XML / Advanced</div>
+        <div class="muted">Advanced XML parameters will appear here.</div>
+
+        <div class="hr"></div>
+
+        <div class="sectionBlock">
+          <div class="panel__title">Hidden field editor</div>
+          <div class="muted">Edit values for non-printed fields.</div>
+          <div id="hiddenEditor" class="hiddenEditor"></div>
+        </div>
       </div>
     </aside>
   </main>

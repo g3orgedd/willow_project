@@ -775,11 +775,9 @@ textarea {
   min-height: 44px;
   border-radius: var(--app-radius-xxl);
   border: 1px solid var(--md-sys-color-outline-variant);
-  /* background: color-mix(in srgb, var(--md-sys-color-surface-container-highest) 70%, transparent); */
+  background: color-mix(in srgb, var(--md-sys-color-surface-container-highest) 70%, transparent);
   color: var(--md-sys-color-on-surface);
   padding: 0 14px;
-  border-radius: var(--app-radius-md);
-  background: var(--md-sys-color-surface-container-high);
 }
 
 .input::placeholder {
@@ -1060,172 +1058,6 @@ textarea {
 
 .checkboxField__native:disabled + .checkboxField__switch {
   border-color: var(--md-sys-color-outline-variant);
-}
-
-/* Selected object inspector: labels are placed above controls, controls are distributed into two columns. */
-#propsPanel {
-  margin-top: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-#propsPanel > .form {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px 7px;
-}
-
-#propsPanel .fieldRow {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 3px;
-  align-items: stretch;
-  min-width: 0;
-  border-radius: var(--app-radius-lg);
-  padding-top: 10px !important;
-  padding: 7px 5px;
-  padding-top: 7px;
-  background: color-mix(in srgb, var(--md-sys-color-surface-container-highest) 70%, transparent);
-  border: 1px solid var(--md-sys-color-outline-variant);
-}
-
-#propsPanel .fieldRow label {
-  min-height: 18px;
-  padding-inline: 10px;
-  color: var(--md-sys-color-on-surface-variant);
-  font-size: 0.78rem;
-  line-height: 1.2;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-#propsPanel .fieldRow .input,
-#propsPanel .fieldRow .select,
-#propsPanel .fieldRow .textarea,
-#propsPanel .fieldRow .checkboxField {
-  min-width: 0;
-}
-
-#propsPanel .fieldRow .checkboxField {
-  width: 100%;
-  min-height: 44px;
-}
-
-#propsPanel .fieldRow:has(.checkboxField) .checkboxField {
-  justify-content: flex-end;
-}
-
-#propsPanel > .form > .note,
-#propsPanel > .form > .hr,
-#propsPanel > .form > .card,
-#propsPanel > .form > .btn,
-#propsPanel > .form > .printControlCard {
-  grid-column: 1 / -1;
-}
-
-#propsPanel .printControlCard {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-  min-height: 68px;
-  padding: 12px 14px 12px 16px;
-  border-radius: var(--app-radius-xl);
-  border: 1px solid color-mix(in srgb, var(--md-sys-color-primary) 30%, var(--md-sys-color-outline-variant));
-  background:
-    linear-gradient(135deg,
-      color-mix(in srgb, var(--md-sys-color-primary-container) 28%, transparent),
-      color-mix(in srgb, var(--md-sys-color-surface-container-highest) 82%, transparent)
-    );
-}
-
-#propsPanel .printControlCard[data-print-state="hidden"] {
-  border-color: var(--md-sys-color-outline-variant);
-  background: color-mix(in srgb, var(--md-sys-color-surface-container-highest) 70%, transparent);
-}
-
-#propsPanel .printControlCard__copy {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-#propsPanel .printControlCard__titleRow {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
-
-#propsPanel .printControlCard__title {
-  color: var(--md-sys-color-on-surface);
-  font-size: 0.92rem;
-  line-height: 1.2;
-  font-weight: 700;
-}
-
-#propsPanel .printControlCard__status {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 22px;
-  padding: 0 8px;
-  border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--md-sys-color-primary) 36%, var(--md-sys-color-outline-variant));
-  background: color-mix(in srgb, var(--md-sys-color-primary-container) 60%, transparent);
-  color: var(--md-sys-color-on-primary-container);
-  font-size: 0.68rem;
-  line-height: 1;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.045em;
-}
-
-#propsPanel .printControlCard[data-print-state="hidden"] .printControlCard__status {
-  border-color: var(--md-sys-color-outline-variant);
-  background: color-mix(in srgb, var(--md-sys-color-surface-variant) 45%, transparent);
-  color: var(--md-sys-color-on-surface-variant);
-}
-
-#propsPanel .printControlCard__description {
-  color: var(--md-sys-color-on-surface-variant);
-  font-size: 0.75rem;
-  line-height: 1.35;
-}
-
-#propsPanel .printControlCard .checkboxField {
-  width: auto;
-  min-height: 40px;
-  justify-content: flex-end;
-}
-
-#propsPanel .printControlCard .checkboxField__switch {
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--md-sys-color-on-surface) 6%, transparent);
-}
-
-#propsPanel .hr1 {
-  width: 100%;
-}
-
-@media (max-width: 480px) {
-  #propsPanel .printControlCard {
-    min-height: 62px;
-    padding: 11px 12px;
-  }
-
-  #propsPanel .printControlCard__description {
-    display: none;
-  }
-}
-
-@media (max-width: 360px) {
-  #propsPanel > .form {
-    grid-template-columns: 1fr;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1778,7 +1610,7 @@ body.modal-open {
 
   .tabsWrap {
     overflow: hidden;
-    padding: 12px;
+    padding: 8px;
   }
 
   .tab {
@@ -1881,11 +1713,10 @@ body.modal-open {
 
   .topbar__brandCluster {
     gap: 6px;
-    height: 50px;
   }
 
   .brand {
-    height: 48px;
+    height: 44px;
     padding: 5px 8px 5px 5px;
   }
 
@@ -1915,7 +1746,6 @@ body.modal-open {
 
   .mobilePanToggle {
     min-height: 46px;
-    background: var(--md-sys-color-surface-container);
   }
 
   .utilityGroup--toggles {
