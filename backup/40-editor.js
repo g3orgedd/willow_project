@@ -239,19 +239,12 @@ function createDeleteControlButton() {
   return btn;
 }
 
-function createPropsDivider() {
-  const divider = document.createElement("div");
-  divider.className = "hr1";
-  return divider;
-}
-
 function buildCommonProps(f) {
   const wrap = document.createElement("div");
   wrap.className = "form";
 
   wrap.appendChild(createPrintControlCard(f));
   wrap.appendChild(createDeleteControlButton());
-  wrap.appendChild(createPropsDivider());
   wrap.appendChild(fieldRow("Name", inputText(f.name, (v) => renameField(f, v))));
   if (f.fldType === "FixedText") {
     wrap.appendChild(fieldRow("Type", buildFixedTextEntryModeSelect(f)));

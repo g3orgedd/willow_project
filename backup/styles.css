@@ -2034,19 +2034,3 @@ body.modal-open {
     min-width: 40px;
   }
 }
-
-/* Hidden field editor: make the Value input use the full card width. */
-#hiddenEditor .card__grid {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-#hiddenEditor .card__grid > * {
-  min-width: 0;
-}
-
-#hiddenEditor .input,
-#hiddenEditor .select,
-#hiddenEditor .textarea {
-  width: 100%;
-  max-width: none;
-}
