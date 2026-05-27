@@ -180,7 +180,7 @@ textarea {
 
 .topbar__actions--utility {
   justify-content: flex-end;
-  min-width: 800px;
+  min-width: 835px;
 }
 
 .brand {
@@ -406,7 +406,7 @@ textarea {
   display: flex;
   align-items: center;
   gap: 10px;
-  min-width: min(360px, 100%);
+  min-width: min(395px, 100%);
   min-height: 58px;
   padding: 8px 15px 8px 8px;
   border-radius: var(--app-radius-xxl);
