@@ -14,6 +14,11 @@ function updateHiddenCanvasToggleButton() {
   btn.selected = showHidden;
 }
 
+const MULTI_FIELD_DRAG_EVENT_NS = ".ciffMultiFieldDrag";
+let multiFieldDragStartPointer = null;
+let multiFieldDragState = null;
+let transformerBackProxyDisabled = false;
+
 function getPrintableAreaBoundsInternal() {
   return {
     x: 0,
@@ -368,6 +373,208 @@ function renderObjects() {
   objLayer.draw();
 }
 
+function rememberMultiFieldDragStartPointer() {
+  multiFieldDragStartPointer = getStageLocalPointerPosition();
+}
+
+function getUnionClientRect(nodes) {
+  const boxes = nodes
+    .filter((node) => node?.getLayer?.())
+    .map((node) => node.getClientRect({ relativeTo: objLayer }))
+    .filter((box) => Number.isFinite(box.x) && Number.isFinite(box.y) && box.width >= 0 && box.height >= 0);
+
+  if (!boxes.length) return null;
+
+  const minX = Math.min(...boxes.map((box) => box.x));
+  const minY = Math.min(...boxes.map((box) => box.y));
+  const maxX = Math.max(...boxes.map((box) => box.x + box.width));
+  const maxY = Math.max(...boxes.map((box) => box.y + box.height));
+  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+}
+
+function getMultiDragTargetBoxes(excludedNames) {
+  return state.fields
+    .map((field) => field._konva)
+    .filter((node) => node && node.getLayer?.() && !excludedNames.has(node.name()))
+    .map((node) => node.getClientRect({ relativeTo: objLayer }))
+    .filter((box) => Number.isFinite(box.x) && Number.isFinite(box.y) && box.width > 0 && box.height > 0);
+}
+
+function resolveMultiDragDelta(rawDx, rawDy, dragState) {
+  let dx = Number.isFinite(rawDx) ? rawDx : 0;
+  let dy = Number.isFinite(rawDy) ? rawDy : 0;
+
+  if (elToggleSnap.checked) {
+    const snapped = snapPoint(dragState.bounds.x + dx, dragState.bounds.y + dy);
+    dx = snapped.x - dragState.bounds.x;
+    dy = snapped.y - dragState.bounds.y;
+  }
+
+  if (elToggleAlign?.checked) {
+    const movingBox = {
+      x: dragState.bounds.x + dx,
+      y: dragState.bounds.y + dy,
+      width: dragState.bounds.width,
+      height: dragState.bounds.height
+    };
+    const targetBoxes = getMultiDragTargetBoxes(dragState.names);
+    const snapX = findClosestAlignmentSnap(movingBox, targetBoxes, "x");
+    const snapY = findClosestAlignmentSnap(movingBox, targetBoxes, "y");
+
+    if (snapX) dx += snapX.delta;
+    if (snapY) dy += snapY.delta;
+    drawAlignmentGuides({
+      x: snapX?.guide,
+      y: snapY?.guide
+    });
+  } else {
+    clearAlignmentGuides();
+  }
+
+  return { dx, dy };
+}
+
+function beginMultiFieldDrag(activeName = null) {
+  if (isMobilePanMode || multiFieldDragState) return !!multiFieldDragState;
+
+  const fields = getSelectedFields().filter((selectedField) => selectedField._konva?.getLayer?.());
+  if (fields.length <= 1) return false;
+  if (activeName && !fields.some((selectedField) => selectedField.name === activeName)) return false;
+
+  const nodes = fields.map((selectedField) => selectedField._konva);
+  const bounds = getUnionClientRect(nodes);
+  if (!bounds) return false;
+
+  const pointer = multiFieldDragStartPointer || getStageLocalPointerPosition();
+  const positions = new Map();
+  const internalPositions = new Map();
+
+  fields.forEach((selectedField) => {
+    positions.set(selectedField.name, {
+      x: selectedField._konva.x(),
+      y: selectedField._konva.y()
+    });
+    internalPositions.set(selectedField.name, {
+      x: selectedField.geom.x,
+      y: selectedField.geom.y
+    });
+  });
+
+  multiFieldDragState = {
+    names: new Set(fields.map((selectedField) => selectedField.name)),
+    pointer,
+    bounds,
+    positions,
+    internalPositions,
+    delta: { dx: 0, dy: 0 }
+  };
+
+  return true;
+}
+
+function applyMultiFieldDragMove() {
+  const dragState = multiFieldDragState;
+  if (!dragState) return false;
+
+  const pointer = getStageLocalPointerPosition();
+  const rawDx = pointer && dragState.pointer ? pointer.x - dragState.pointer.x : dragState.delta.dx;
+  const rawDy = pointer && dragState.pointer ? pointer.y - dragState.pointer.y : dragState.delta.dy;
+  const { dx, dy } = resolveMultiDragDelta(rawDx, rawDy, dragState);
+
+  dragState.delta = { dx, dy };
+
+  dragState.names.forEach((name) => {
+    const field = state.fieldByName.get(name);
+    const start = dragState.positions.get(name);
+    if (!field?._konva || !start) return;
+    field._konva.position({ x: start.x + dx, y: start.y + dy });
+  });
+
+  transformer?.forceUpdate?.();
+  objLayer.batchDraw();
+  uiLayer.batchDraw();
+  return true;
+}
+
+function finishMultiFieldDrag() {
+  const dragState = multiFieldDragState;
+  if (!dragState) return false;
+
+  clearAlignmentGuides();
+  pushHistory();
+
+  const dxInternal = mmToInternal(pxToMm(dragState.delta.dx));
+  const dyInternal = mmToInternal(pxToMm(dragState.delta.dy));
+
+  dragState.names.forEach((name) => {
+    const field = state.fieldByName.get(name);
+    const start = dragState.internalPositions.get(name);
+    if (!field || !start) return;
+    field.geom.x = start.x + dxInternal;
+    field.geom.y = start.y + dyInternal;
+  });
+
+  multiFieldDragState = null;
+  multiFieldDragStartPointer = null;
+
+  renderObjects();
+  renderUI();
+  renderFieldLists();
+  renderSelectionPanels();
+  return true;
+}
+
+function disableTransformerNodeDragProxyForMultiSelection(nodes) {
+  if (!transformer || nodes.length <= 1) return;
+
+  const namespace = transformer._getEventNamespace?.();
+  if (!namespace) return;
+
+  nodes.forEach((node) => node.off(`dragstart.${namespace} dragmove.${namespace}`));
+}
+
+function syncTransformerBackProxyForSelection(nodes) {
+  if (!transformer) return;
+
+  const namespace = transformer._getEventNamespace?.();
+  const back = transformer.findOne?.(".back");
+  if (!namespace || !back) return;
+
+  back.off(
+    `mousedown${MULTI_FIELD_DRAG_EVENT_NS} touchstart${MULTI_FIELD_DRAG_EVENT_NS} ` +
+    `dragstart${MULTI_FIELD_DRAG_EVENT_NS} dragmove${MULTI_FIELD_DRAG_EVENT_NS} dragend${MULTI_FIELD_DRAG_EVENT_NS}`
+  );
+
+  if (nodes.length <= 1) {
+    if (transformerBackProxyDisabled) {
+      transformer._proxyDrag?.(back);
+      transformerBackProxyDisabled = false;
+    }
+    return;
+  }
+
+  if (!transformerBackProxyDisabled) {
+    back.off(`dragstart.${namespace} dragmove.${namespace}`);
+    transformerBackProxyDisabled = true;
+  }
+
+  back.on(`mousedown${MULTI_FIELD_DRAG_EVENT_NS} touchstart${MULTI_FIELD_DRAG_EVENT_NS}`, () => {
+    rememberMultiFieldDragStartPointer();
+  });
+  back.on(`dragstart${MULTI_FIELD_DRAG_EVENT_NS}`, (e) => {
+    e.cancelBubble = true;
+    beginMultiFieldDrag();
+  });
+  back.on(`dragmove${MULTI_FIELD_DRAG_EVENT_NS}`, (e) => {
+    e.cancelBubble = true;
+    applyMultiFieldDragMove();
+  });
+  back.on(`dragend${MULTI_FIELD_DRAG_EVENT_NS}`, (e) => {
+    e.cancelBubble = true;
+    finishMultiFieldDrag();
+  });
+}
+
 function makeFieldGroup(field) {
   const { x, y, w, h } = field.geom;
   const xPx = mmToPx(internalToMm(x));
@@ -415,7 +622,22 @@ function makeFieldGroup(field) {
     renderUI();
   });
 
+  group.on("mousedown touchstart", () => {
+    if (isMobilePanMode) return;
+    if (!isFieldSelected(field.name) || getSelectedNames().length <= 1) return;
+    rememberMultiFieldDragStartPointer();
+  });
+
+  group.on("dragstart", () => {
+    beginMultiFieldDrag(field.name);
+  });
+
   group.on("dragmove", () => {
+    if (multiFieldDragState?.names.has(field.name)) {
+      applyMultiFieldDragMove();
+      return;
+    }
+
     if (elToggleSnap.checked) {
       const snapped = snapPoint(group.x(), group.y());
       group.position(snapped);
@@ -424,6 +646,11 @@ function makeFieldGroup(field) {
   });
 
   group.on("dragend", () => {
+    if (multiFieldDragState?.names.has(field.name)) {
+      finishMultiFieldDrag();
+      return;
+    }
+
     clearAlignmentGuides();
     pushHistory();
     const geomNew = pxGeomToInternal(group.x(), group.y(), rect.width(), rect.height());
@@ -1416,7 +1643,11 @@ function setSelectedNames(names, primaryName = null) {
 function renderUI() {
   transformer.nodes([]);
   const nodes = getSelectedFields().map((field) => field._konva).filter(Boolean);
-  if (nodes.length) transformer.nodes(nodes);
+  if (nodes.length) {
+    transformer.nodes(nodes);
+    disableTransformerNodeDragProxyForMultiSelection(nodes);
+  }
+  syncTransformerBackProxyForSelection(nodes);
   uiLayer.draw();
 }
 
