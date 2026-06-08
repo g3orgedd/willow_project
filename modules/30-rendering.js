@@ -360,17 +360,32 @@ function renderGrid() {
 
 function renderObjects() {
   objLayer.destroyChildren();
+  state.fields.forEach((field) => {
+    field._konva = null;
+  });
   updatePrintableValidation();
   if (!state.xmlDoc) { objLayer.draw(); return; }
 
-  const visible = state.fields.filter(f => f.printed || state.showHiddenOnCanvas);
+  const visible = state.fields.filter(shouldRenderFieldOnCanvas);
   visible.forEach(f => {
-    const g = makeFieldGroup(f);
+    const g = makeFieldGroup(f, { selectionOnly: isSelectionOnlyHiddenField(f) });
     f._konva = g;
     objLayer.add(g);
   });
 
   objLayer.draw();
+}
+
+function shouldRenderFieldOnCanvas(field) {
+  return !!field && (
+    field.printed ||
+    state.showHiddenOnCanvas ||
+    (isTextSelectionBoundsField(field) && isFieldSelected(field.name))
+  );
+}
+
+function isSelectionOnlyHiddenField(field) {
+  return !!field && isTextSelectionBoundsField(field) && !field.printed && !state.showHiddenOnCanvas && isFieldSelected(field.name);
 }
 
 function rememberMultiFieldDragStartPointer() {
@@ -575,7 +590,7 @@ function syncTransformerBackProxyForSelection(nodes) {
   });
 }
 
-function makeFieldGroup(field) {
+function makeFieldGroup(field, options = {}) {
   const { x, y, w, h } = field.geom;
   const xPx = mmToPx(internalToMm(x));
   const yPx = mmToPx(internalToMm(y));
@@ -584,6 +599,8 @@ function makeFieldGroup(field) {
 
   const isDM = field.fldType === "Barcode" && field.barcode?.dataMatrix;
   const isHidden = !field.printed;
+  const selectionOnly = !!options.selectionOnly;
+  const useHiddenTextBacking = isHidden && isTextSelectionBoundsField(field);
 
   const group = new Konva.Group({ x: xPx, y: yPx, draggable: !isMobilePanMode, name: field.name });
   const content = new Konva.Group({ name: "PreviewContent" });
@@ -593,12 +610,22 @@ function makeFieldGroup(field) {
     height: hPx,
     fill: isDM ? "rgba(255,255,255,0.98)" : (isHidden ? "rgba(106,168,255,0.10)" : "rgba(0,0,0,0.001)"),
     stroke: isHidden ? "rgba(106,168,255,0.5)" : (isDM ? "rgba(0,0,0,0.08)" : "rgba(0,0,0,0)"),
-    strokeWidth: isHidden ? 1 : (isDM ? 1 : 0)
+    strokeWidth: isHidden ? 1 : (isDM ? 1 : 0),
+    visible: !selectionOnly && !useHiddenTextBacking,
+    listening: !selectionOnly && !useHiddenTextBacking
   });
 
   content.add(rect);
-  content.add(makePreviewNode(field, wPx, hPx));
-  if (isInvalidPrintableField(field)) {
+  const previewNode = makePreviewNode(field, wPx, hPx);
+  if (selectionOnly) previewNode.visible?.(false);
+  if (!selectionOnly && useHiddenTextBacking) {
+    addHiddenTextBacking(content, previewNode, previewNode._ciffPreviewTextStyle);
+  }
+  content.add(previewNode);
+  if (isTextSelectionBoundsField(field)) {
+    addTextPreviewSelectionBounds(content, previewNode, previewNode._ciffPreviewTextStyle);
+  }
+  if (!selectionOnly && isInvalidPrintableField(field)) {
     content.add(new Konva.Rect({
       width: wPx,
       height: hPx,
@@ -614,6 +641,7 @@ function makeFieldGroup(field) {
   applyFieldOrientation(content, wPx, hPx, field.orientation);
 
   group.add(content);
+  installTextSelectionClientRect(group, field);
 
   group.on("click", (e) => {
     e.cancelBubble = true;
@@ -673,6 +701,8 @@ const PREVIEW_TEXT_CLARISOFT_OFFSET_X_MM = 0.42;
 const PREVIEW_TEXT_CLARISOFT_OFFSET_Y_MM = 0.50;
 const PREVIEW_TEXT_CLARISOFT_WIDTH_SCALE = 1.049;
 const PREVIEW_TEXT_RIGHT_CLIP_GUARD_PX = 3;
+const PREVIEW_TEXT_SELECTION_PADDING_MM = 0.15;
+const PREVIEW_TEXT_SELECTION_MIN_SIZE_PX = 4;
 const PREVIEW_TEXT_CLIP_DEBUG = globalThis.CIFF_TEXT_PREVIEW_DEBUG === true || globalThis.CIFF_TEXT_CLIP_DEBUG === true;
 
 function measurePreviewTextBounds(text, options) {
@@ -811,6 +841,103 @@ function alignTextPreviewNode(node, textStyle, wPx, hPx) {
   node.y(node.y() + (targetY - rect.y));
 }
 
+function isTextSelectionBoundsField(field) {
+  return !!field && !(field.fldType === "Barcode" && field.barcode?.dataMatrix);
+}
+
+function getTextSelectionPaddingPx() {
+  return Math.max(2, mmToPx(PREVIEW_TEXT_SELECTION_PADDING_MM));
+}
+
+function getTextPreviewSelectionRect(node, textStyle) {
+  const measured = textStyle?.measuredTextBounds;
+  const scaleX = Math.max(0.01, node?.scaleX?.() ?? textStyle?.scaleX ?? 1);
+  const scaleY = Math.max(0.01, node?.scaleY?.() ?? 1);
+  const pad = getTextSelectionPaddingPx();
+  const textWidth = Math.max(1, Number(measured?.width ?? 0) * scaleX);
+  const textHeight = Math.max(1, Number(measured?.height ?? textStyle?.fontSize ?? 0) * scaleY);
+  const textX = (node?.x?.() ?? 0) + (Number(measured?.x ?? 0) * scaleX);
+  const textY = (node?.y?.() ?? 0) + (Number(measured?.y ?? 0) * scaleY);
+
+  return {
+    x: textX - pad,
+    y: textY - pad,
+    width: Math.max(PREVIEW_TEXT_SELECTION_MIN_SIZE_PX, textWidth + pad * 2),
+    height: Math.max(PREVIEW_TEXT_SELECTION_MIN_SIZE_PX, textHeight + pad * 2)
+  };
+}
+
+function clearPreviewSelectionBounds(content) {
+  const current = content?.findOne?.(".SelectionBounds");
+  if (current) current.destroy();
+}
+
+function clearHiddenTextBacking(content) {
+  const current = content?.findOne?.(".HiddenTextBacking");
+  if (current) current.destroy();
+}
+
+function addHiddenTextBacking(content, node, textStyle) {
+  if (!content || !node || !textStyle?.measuredTextBounds) return null;
+
+  const rect = getTextPreviewSelectionRect(node, textStyle);
+  const backing = new Konva.Rect({
+    name: "HiddenTextBacking",
+    x: rect.x,
+    y: rect.y,
+    width: rect.width,
+    height: rect.height,
+    fill: "rgba(106,168,255,0.10)",
+    stroke: "rgba(106,168,255,0.5)",
+    strokeWidth: 1
+  });
+  content.add(backing);
+  return backing;
+}
+
+function addTextPreviewSelectionBounds(content, node, textStyle) {
+  if (!content || !node || !textStyle?.measuredTextBounds) return null;
+
+  const rect = getTextPreviewSelectionRect(node, textStyle);
+  const selectionBounds = new Konva.Rect({
+    name: "SelectionBounds",
+    x: rect.x,
+    y: rect.y,
+    width: rect.width,
+    height: rect.height,
+    visible: false,
+    listening: false,
+    strokeWidth: 0
+  });
+  content.add(selectionBounds);
+  return selectionBounds;
+}
+
+function installTextSelectionClientRect(group, field) {
+  if (!isTextSelectionBoundsField(field) || group._ciffDefaultGetClientRect) return;
+
+  group._ciffDefaultGetClientRect = group.getClientRect.bind(group);
+  group.getClientRect = function(config = {}) {
+    const selectionBounds = this.findOne?.(".SelectionBounds");
+    if (!selectionBounds || !this._transformedRect) {
+      return this._ciffDefaultGetClientRect(config);
+    }
+
+    const localRect = selectionBounds.getClientRect({
+      relativeTo: this,
+      skipShadow: true,
+      skipStroke: true
+    });
+
+    if (!Number.isFinite(localRect.x) || !Number.isFinite(localRect.y) || localRect.width <= 0 || localRect.height <= 0) {
+      return this._ciffDefaultGetClientRect(config);
+    }
+
+    if (config.skipTransform) return localRect;
+    return this._transformedRect(localRect, config.relativeTo);
+  };
+}
+
 function makePreviewNode(field, wPx, hPx, now = new Date()) {
   const isDM = field.fldType === "Barcode" && field.barcode?.dataMatrix;
   if (isDM) return makeDataMatrixPreviewNode(field, wPx, hPx, now);
@@ -838,6 +965,7 @@ function makePreviewNode(field, wPx, hPx, now = new Date()) {
     perfectDrawEnabled: false
   });
   alignTextPreviewNode(node, textStyle, wPx, hPx);
+  node._ciffPreviewTextStyle = textStyle;
   node.getSelfRect = () => ({
     x: -(node.x() || 0) / Math.max(0.01, node.scaleX?.() ?? 1),
     y: -(node.y() || 0),
@@ -1338,26 +1466,46 @@ function buildDataMatrixRenderMatrix(placement, symbolInfo) {
 
 function rebuildFieldPreviewNode(field, now = new Date()) {
   if (!field?._konva) return false;
-  if (!field.printed && !state.showHiddenOnCanvas) return false;
+  if (!shouldRenderFieldOnCanvas(field)) return false;
 
   const content = field._konva.findOne(".PreviewContent");
   const rect = field._konva.findOne("Rect");
   if (!content || !rect) return false;
+  const selectionOnly = isSelectionOnlyHiddenField(field);
+  const useHiddenTextBacking = !field.printed && isTextSelectionBoundsField(field);
 
   const currentPreview = content.findOne(".PreviewValue");
   if (currentPreview) currentPreview.destroy();
-  content.add(makePreviewNode(field, rect.width(), rect.height(), now));
+  clearPreviewSelectionBounds(content);
+  clearHiddenTextBacking(content);
+
+  const previewNode = makePreviewNode(field, rect.width(), rect.height(), now);
+  if (selectionOnly) previewNode.visible?.(false);
+  if (!selectionOnly && useHiddenTextBacking) {
+    addHiddenTextBacking(content, previewNode, previewNode._ciffPreviewTextStyle);
+  }
+  content.add(previewNode);
+  if (isTextSelectionBoundsField(field)) {
+    addTextPreviewSelectionBounds(content, previewNode, previewNode._ciffPreviewTextStyle);
+  }
   return true;
+}
+
+function refreshSelectionBoundsForField(field) {
+  if (!field || !isFieldSelected(field.name)) return;
+  transformer?.forceUpdate?.();
+  uiLayer?.batchDraw();
 }
 
 function refreshFieldCanvasPreview(field, now = new Date()) {
   if (!rebuildFieldPreviewNode(field, now)) return;
+  refreshSelectionBoundsForField(field);
   objLayer.batchDraw();
 }
 
 function refreshCanvasPreviews(now = new Date()) {
   let changed = false;
-  const visibleFields = state.fields.filter((field) => field._konva && (field.printed || state.showHiddenOnCanvas));
+  const visibleFields = state.fields.filter((field) => field._konva && shouldRenderFieldOnCanvas(field));
 
   visibleFields.forEach((field) => {
     const needsRefresh = field.fldType === "TimeText" ||
@@ -1365,7 +1513,10 @@ function refreshCanvasPreviews(now = new Date()) {
       field.fldType === "OffsetDateText" ||
       (field.fldType === "Barcode" && field.barcode?.dataMatrix);
     if (!needsRefresh) return;
-    if (rebuildFieldPreviewNode(field, now)) changed = true;
+    if (rebuildFieldPreviewNode(field, now)) {
+      changed = true;
+      refreshSelectionBoundsForField(field);
+    }
   });
 
   if (changed) objLayer.batchDraw();
