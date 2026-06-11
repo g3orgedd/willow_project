@@ -863,8 +863,15 @@ function renameField(field, nextNameRaw) {
   renderAll();
 }
 
+function getNextDateOffsetName() {
+  const existing = new Set(state.dateOffsets.map((offset) => offset.name));
+  let index = 0;
+  while (existing.has(`offset${index}`)) index += 1;
+  return `offset${index}`;
+}
+
 function createDateOffset(name = null, defaultOffset = null) {
-  const nextName = name || uniqueName("offset", state.dateOffsets.map(o => o.name));
+  const nextName = name || getNextDateOffsetName();
   const offset = {
     name: nextName,
     default: {
@@ -910,8 +917,14 @@ function renameDateOffset(offset, nextNameRaw) {
   return true;
 }
 
-function ensureCalculatedDateOffset(field) {
+function ensureCalculatedDateOffset(field, options = {}) {
   if (!field) return null;
+
+  if (options.createNew) {
+    const created = createDateOffset();
+    field.data.offsetRef = created.name;
+    return created;
+  }
 
   const existing = state.dateOffsets.find((offset) => offset.name === field.data.offsetRef);
   if (existing) return existing;
@@ -980,7 +993,7 @@ function addField(fldType) {
       textEntryMode: (fldType === "FixedText" ? "fixed" : null),
       userEnterData: "",
       mask: "",
-      offsetRef: (fldType === "OffsetDateText" ? (state.dateOffsets[0]?.name ?? null) : null),
+      offsetRef: null,
       dateLocale: ((fldType === "DateText" || fldType === "OffsetDateText") ? "en" : null),
       counter: {
         noOfChars: (fldType === "CounterText" ? 4 : null),
@@ -1000,7 +1013,7 @@ function addField(fldType) {
   if (fldType === "DateText") { field.data.defaultValue = buildDateTemplateFormat("dd/MM/yy", "/"); }
   if (fldType === "OffsetDateText") {
     field.data.defaultValue = buildDateTemplateFormat("dd/MM/yy", "/");
-    ensureCalculatedDateOffset(field);
+    ensureCalculatedDateOffset(field, { createNew: true });
   }
   if (fldType === "TimeText") { field.data.defaultValue = buildTimeTemplateFormat("HH:mm", ":"); }
   if (fldType === "CounterText") normalizeCounterField(field, { preserveCurrent: false });
@@ -1175,4 +1188,3 @@ function normalizeDmSegments(dm) {
   dm.segments = dm.segments.filter(Boolean);
   dm.segments.forEach((s, i) => s.index = i);
 }
-
