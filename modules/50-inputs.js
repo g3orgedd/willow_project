@@ -222,28 +222,39 @@ function inputNumber(value, onChange, opts = {}) {
 
   let lastEmitted = null;
 
-  const normalizeValue = () => {
+  const isInRange = (next) => {
+    if (opts.min != null && next < Number(opts.min)) return false;
+    if (opts.max != null && next > Number(opts.max)) return false;
+    return true;
+  };
+
+  const normalizeValue = (commit) => {
     let next = Number(inp.value);
-    if (!Number.isFinite(next)) next = Number(value ?? 0);
+    if (!Number.isFinite(next)) {
+      if (!commit) return null;
+      next = Number(value ?? 0);
+    }
     if (opts.integer) next = Math.round(next);
-    if (opts.min != null) next = Math.max(Number(opts.min), next);
-    if (opts.max != null) next = Math.min(Number(opts.max), next);
+    if (commit && opts.min != null) next = Math.max(Number(opts.min), next);
+    if (commit && opts.max != null) next = Math.min(Number(opts.max), next);
     return next;
   };
 
-  const emit = () => {
-    const next = normalizeValue();
+  const emit = (commit = true) => {
+    const next = normalizeValue(commit);
+    if (next == null) return;
+    if (!commit && !isInRange(next)) return;
     if (lastEmitted === next) {
-      if (String(inp.value) !== String(next)) inp.value = String(next);
+      if (commit && String(inp.value) !== String(next)) inp.value = String(next);
       return;
     }
     lastEmitted = next;
-    inp.value = String(next);
+    if (commit) inp.value = String(next);
     onChange(next);
   };
 
-  if (opts.live) inp.addEventListener("input", emit);
-  inp.addEventListener("change", emit);
+  if (opts.live) inp.addEventListener("input", () => emit(false));
+  inp.addEventListener("change", () => emit(true));
   return inp;
 }
 

@@ -1,5 +1,7 @@
 // ---------- Properties builders ----------
 const PRINT_SWITCH_ANIMATION_MS = 220;
+const X_MAG_MIN = 3;
+const X_MAG_MAX = 500;
 
 function formatMaxCharacters(value) {
   return Number.isSafeInteger(value) ? String(value) : "Not specified";
@@ -412,9 +414,9 @@ function buildTextLikeProps(f) {
 
     wrap.appendChild(fieldRow("XMag (%)", inputNumber(f.text.xMag ?? 100, (v) => {
       pushHistory();
-      f.text.xMag = clamp(1, 100, Math.round(v));
+      f.text.xMag = clamp(X_MAG_MIN, X_MAG_MAX, Math.round(v));
       refreshFieldCanvasPreview(f);
-    }, { step: 1, integer: true, min: 1, max: 100, live: true })));
+    }, { step: 1, integer: true, min: X_MAG_MIN, max: X_MAG_MAX, live: true })));
 
     return wrap;
   }
@@ -493,9 +495,9 @@ function buildTextLikeProps(f) {
 
   wrap.appendChild(fieldRow("XMag (%)", inputNumber(f.text.xMag ?? 100, (v) => {
     pushHistory();
-    f.text.xMag = clamp(1, 100, Math.round(v));
+    f.text.xMag = clamp(X_MAG_MIN, X_MAG_MAX, Math.round(v));
     refreshFieldCanvasPreview(f);
-  }, { step: 1, integer: true, min: 1, max: 100, live: true })));
+  }, { step: 1, integer: true, min: X_MAG_MIN, max: X_MAG_MAX, live: true })));
 
   return wrap;
 }
