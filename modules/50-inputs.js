@@ -338,17 +338,14 @@ function selectStringOptions(value, options, onChange) {
   );
 }
 
-function selectTimeSeparator(value, onChange) {
-  const current = value ?? ":";
-  const options = [];
+function getSupportedSeparatorValue(value, options, fallback) {
+  const current = value ?? fallback;
+  return options.some(opt => opt.value === current) ? current : fallback;
+}
 
-  if (!TIME_SEPARATOR_OPTIONS.some(opt => opt.value === current)) {
-    options.push({ value: current, label: current || "\u0411\u0435\u0437 \u0441\u0435\u043f\u0430\u0440\u0430\u0442\u043e\u0440\u0430" });
-  }
-  TIME_SEPARATOR_OPTIONS.forEach(opt => {
-    if (!options.some(item => item.value === opt.value)) options.push(opt);
-  });
-  return createMaterialSelect(options, current, onChange);
+function selectTimeSeparator(value, onChange) {
+  const current = getSupportedSeparatorValue(value, TIME_SEPARATOR_OPTIONS, ":");
+  return createMaterialSelect(TIME_SEPARATOR_OPTIONS, current, onChange);
 }
 
 function selectDateFormat(value, locale, onChange) {
@@ -370,16 +367,8 @@ function selectDateFormat(value, locale, onChange) {
 }
 
 function selectDateSeparator(value, onChange) {
-  const current = value ?? "/";
-  const options = [];
-
-  if (!DATE_SEPARATOR_OPTIONS.some(opt => opt.value === current)) {
-    options.push({ value: current, label: current || "\u0411\u0435\u0437 \u0441\u0435\u043f\u0430\u0440\u0430\u0442\u043e\u0440\u0430" });
-  }
-  DATE_SEPARATOR_OPTIONS.forEach(opt => {
-    if (!options.some(item => item.value === opt.value)) options.push(opt);
-  });
-  return createMaterialSelect(options, current, onChange);
+  const current = getSupportedSeparatorValue(value, DATE_SEPARATOR_OPTIONS, ".");
+  return createMaterialSelect(DATE_SEPARATOR_OPTIONS, current, onChange);
 }
 
 function normalizeTimeFormat(value) {

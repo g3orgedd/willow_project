@@ -1557,16 +1557,17 @@ function getDateFormatPreset(value) {
 
 function getDateSeparator(value) {
   const normalized = normalizeTimeFormat(value);
-  if (!normalized) return "/";
+  if (!normalized) return ".";
 
   const separatorChars = normalized.replace(/yyyy|yy|MMM|MM|dd/g, "");
-  return separatorChars ? separatorChars[0] : "";
+  const separator = separatorChars ? separatorChars[0] : "";
+  return separator === "/" ? "." : separator;
 }
 
 function buildDateTemplateFormat(formatPreset, separator) {
   const tokens = getDateFormatTokens(formatPreset);
   if (!tokens.length) return "";
-  if (separator == null) separator = "/";
+  if (separator == null) separator = ".";
   if (separator === "") return tokens.join("");
   return tokens.join(`'${separator}'`);
 }
@@ -1631,7 +1632,7 @@ function getTimeTextValue(field, now = new Date()) {
 }
 
 function getDateTextValue(field, now = new Date()) {
-  const format = normalizeTimeFormat(field?.data?.defaultValue || buildDateTemplateFormat("dd/MM/yy", "/")) || "dd/MM/yy";
+  const format = normalizeTimeFormat(field?.data?.defaultValue || buildDateTemplateFormat("dd/MM/yy", ".")) || "dd.MM.yy";
   const date = getDateBaseValue(field, now);
   const locale = field?.data?.dateLocale === "ru" ? "ru" : "en";
   const months = DATE_MONTH_NAMES[locale] || DATE_MONTH_NAMES.en;

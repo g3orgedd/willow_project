@@ -107,14 +107,16 @@ const DATA_MATRIX_SYMBOL_SIZE_OPTIONS = [...DATA_MATRIX_SYMBOLS.map((info) => in
 const DATA_MATRIX_MODULE_SIZES = Array.from({ length: 60 }, (_, index) => Number((((index + 1) / 12)).toFixed(2)));
 const ALLOWED_ORIENTATIONS = [0, 90, 180, 270];
 const TIME_TEXT_FORMATS = ["HH:mm", "hh:mm", "h:mm", "HH:mm:ss", "h:m:s", "hh:mm:ss"];
-const TIME_SEPARATOR_OPTIONS = [
-  { value: ":", label: ":" },
-  { value: " ", label: "\u041f\u0440\u043e\u0431\u0435\u043b" },
-  { value: ",", label: "," },
-  { value: "-", label: "-" },
-  { value: "\\", label: "\\" },
-  { value: "", label: "\u0411\u0435\u0437 \u0441\u0435\u043f\u0430\u0440\u0430\u0442\u043e\u0440\u0430" }
+const TEXT_SEPARATOR_OPTIONS = [
+  { value: "", label: "\u0411\u0435\u0437 \u0441\u0435\u043f\u0430\u0440\u0430\u0442\u043e\u0440\u0430" },
+  { value: " ", label: "\u041f\u0440\u043e\u0431\u0435\u043b ( )" },
+  { value: ":", label: "\u0414\u0432\u043e\u0435\u0442\u043e\u0447\u0438\u0435 (:)" },
+  { value: ".", label: "\u0422\u043e\u0447\u043a\u0430 (.)" },
+  { value: ",", label: "\u0417\u0430\u043f\u044f\u0442\u0430\u044f (,)" },
+  { value: "-", label: "\u0422\u0438\u0440\u0435 (-)" },
+  { value: "\\", label: "\u041e\u0431\u0440\u0430\u0442\u043d\u044b\u0439 \u0441\u043b\u044d\u0448 (\\)" }
 ];
+const TIME_SEPARATOR_OPTIONS = TEXT_SEPARATOR_OPTIONS;
 const DATE_TEXT_FORMAT_OPTIONS = [
   { value: "dd/MMM::en", format: "dd/MMM", locale: "en", label: "dd/MMM (EN)" },
   { value: "dd/MM/yy::en", format: "dd/MM/yy", locale: "en", label: "dd/MM/yy" },
@@ -125,16 +127,7 @@ const DATE_TEXT_FORMAT_OPTIONS = [
   { value: "MMM/yy::en", format: "MMM/yy", locale: "en", label: "MMM/yy (EN)" },
   { value: "MMM/yy::ru", format: "MMM/yy", locale: "ru", label: "MMM/yy (RU)" }
 ];
-const DATE_SEPARATOR_OPTIONS = [
-  { value: "/", label: "/" },
-  { value: " ", label: "\u041f\u0440\u043e\u0431\u0435\u043b" },
-  { value: ":", label: ":" },
-  { value: ",", label: "," },
-  { value: "-", label: "-" },
-  { value: "\\", label: "\\" },
-  { value: ".", label: "." },
-  { value: "", label: "\u0411\u0435\u0437 \u0441\u0435\u043f\u0430\u0440\u0430\u0442\u043e\u0440\u0430" }
-];
+const DATE_SEPARATOR_OPTIONS = TEXT_SEPARATOR_OPTIONS;
 const MONTH_NAMES = {
   en: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
   ru: ["\u044f\u043d\u0432", "\u0444\u0435\u0432", "\u043c\u0430\u0440", "\u0430\u043f\u0440", "\u043c\u0430\u0439", "\u0438\u044e\u043d", "\u0438\u044e\u043b", "\u0430\u0432\u0433", "\u0441\u0435\u043d", "\u043e\u043a\u0442", "\u043d\u043e\u044f", "\u0434\u0435\u043a"]

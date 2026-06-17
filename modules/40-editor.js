@@ -1012,9 +1012,9 @@ function addField(fldType) {
   };
 
   if (fldType === "FixedText") { field.calcData = "TEXT"; field.data.defaultValue = "TEXT"; }
-  if (fldType === "DateText") { field.data.defaultValue = buildDateTemplateFormat("dd/MM/yy", "/"); }
+  if (fldType === "DateText") { field.data.defaultValue = buildDateTemplateFormat("dd/MM/yy", "."); }
   if (fldType === "OffsetDateText") {
-    field.data.defaultValue = buildDateTemplateFormat("dd/MM/yy", "/");
+    field.data.defaultValue = buildDateTemplateFormat("dd/MM/yy", ".");
     ensureCalculatedDateOffset(field, { createNew: true });
   }
   if (fldType === "TimeText") { field.data.defaultValue = buildTimeTemplateFormat("HH:mm", ":"); }
