@@ -31,6 +31,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght@6..144,1..1000&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
 
 <body>
@@ -270,10 +271,19 @@
       </div>
 
       <div class="panel__section tabview" id="tab-xml-advanced">
-        <div class="panel__title">XML / Advanced</div>
-        <div class="muted">Advanced XML parameters will appear here.</div>
+        <div class="sectionBlock languageSettings">
+          <div class="fieldRow">
+            <label for="uiLanguageSelect">Language</label>
+            <select id="uiLanguageSelect" class="select" data-ui-language-select></select>
+          </div>
+        </div>
 
         <div class="hr"></div>
+<!-- 
+        <div class="panel__title">XML / Advanced</div>
+        <div class="muted">Advanced XML parameters will appear here.</div> -->
+
+        <!-- <div class="hr"></div> -->
 
         <div class="sectionBlock">
           <div class="panel__title">Hidden field editor</div>
@@ -348,6 +358,7 @@
   <script>
     window.CIFF_EDITOR_MODULE_FLAGS = {
       core: true,
+      i18n: true,
       canvasUi: true,
       xmlLoad: true,
       rendering: true,

@@ -4,7 +4,7 @@ function updateHiddenCanvasToggleButton() {
   if (!btn) return;
 
   const showHidden = !!state.showHiddenOnCanvas;
-  const label = showHidden ? "Hide hidden fields" : "Show hidden fields";
+  const label = showHidden ? t("panel.hideHidden") : t("panel.showHidden");
   const icon = showHidden ? "./resourses/visibility_off_24dp.svg" : "./resourses/visibility_24dp.svg";
 
   btn.innerHTML = `<img class="btnIcon" src="${icon}" alt="" aria-hidden="true" />`;
@@ -1836,7 +1836,7 @@ function makeListItem(field) {
 
   const trailing = document.createElement("span");
   trailing.className = "badge";
-  trailing.textContent = field.printed ? "Printed" : "Hidden";
+  trailing.textContent = field.printed ? t("panel.printed.title") : t("panel.hidden.title");
 
   main.appendChild(headline);
   main.appendChild(supporting);
@@ -1874,7 +1874,7 @@ function renderSelectionPanels() {
     elDmEmpty.classList.remove("hidden");
     elDmPanel.classList.add("hidden");
     elDmPanel.innerHTML = "";
-    elStatusLeft.textContent = "Nothing selected.";
+    elStatusLeft.textContent = t("status.nothingSelected");
     return;
   }
 
@@ -1923,13 +1923,13 @@ function renderSelectionPanels() {
 
 function updateStatusSelection(f) {
   elStatusLeft.textContent =
-    `Selected: ${f.name} | ${f.fldType} | X=${internalToMm(f.geom.x).toFixed(2)} ` +
+    `${t("status.selected")}: ${f.name} | ${f.fldType} | X=${internalToMm(f.geom.x).toFixed(2)} ` +
     `Y=${internalToMm(f.geom.y).toFixed(2)} W=${internalToMm(f.geom.w).toFixed(2)} ` +
     `H=${internalToMm(f.geom.h).toFixed(2)} (mm)`;
 }
 
 function updateStatusSelectionMulti(fields) {
-  elStatusLeft.textContent = `Selected multiple: ${fields.length} items`;
+  elStatusLeft.textContent = t("status.selectedMultiple", { count: fields.length });
 }
 
 function updateTemplateSize(widthMm, heightMm) {
@@ -1961,7 +1961,7 @@ function renderTemplateSizePanel() {
   if (!state.xmlDoc) {
     const note = document.createElement("div");
     note.className = "muted";
-    note.textContent = "Open or create a template.";
+    note.textContent = t("status.noTemplate");
     elTemplateSizePanel.appendChild(note);
     return;
   }
@@ -1977,12 +1977,17 @@ function renderTemplateSizePanel() {
 
   const wrap = document.createElement("div");
   wrap.className = "form";
-  wrap.appendChild(fieldRow("Width (mm)", inputNumber(currentWidthMm, (v) => updateTemplateSize(v, currentHeightMm), { min: 0.01, max: maxWidthMm, step: 0.01 })));
-  wrap.appendChild(fieldRow("Height (mm)", inputNumber(currentHeightMm, (v) => updateTemplateSize(currentWidthMm, v), { min: 0.01, max: maxHeightMm, step: 0.01 })));
+  wrap.appendChild(fieldRow(t("template.width"), inputNumber(currentWidthMm, (v) => updateTemplateSize(v, currentHeightMm), { min: 0.01, max: maxWidthMm, step: 0.01 })));
+  wrap.appendChild(fieldRow(t("template.height"), inputNumber(currentHeightMm, (v) => updateTemplateSize(currentWidthMm, v), { min: 0.01, max: maxHeightMm, step: 0.01 })));
 
   const note = document.createElement("div");
   note.className = "note";
-  note.textContent = `Limit: ${maxWidthMm.toFixed(2)} x ${maxHeightMm.toFixed(2)} mm | Used: ${internalToMm(getUsedImageInternalWidth()).toFixed(2)} x ${internalToMm(getUsedImageInternalHeight()).toFixed(2)} mm`;
+  note.textContent = t("template.sizeLimit", {
+    maxWidth: maxWidthMm.toFixed(2),
+    maxHeight: maxHeightMm.toFixed(2),
+    usedWidth: internalToMm(getUsedImageInternalWidth()).toFixed(2),
+    usedHeight: internalToMm(getUsedImageInternalHeight()).toFixed(2)
+  });
 
   elTemplateSizePanel.appendChild(wrap);
   elTemplateSizePanel.appendChild(note);
@@ -2017,7 +2022,7 @@ function renderTemplateTargetPanel() {
   if (!state.xmlDoc) {
     const note = document.createElement("div");
     note.className = "muted";
-    note.textContent = "Open or create a template.";
+    note.textContent = t("status.noTemplate");
     elTemplateTargetPanel.appendChild(note);
     return;
   }
@@ -2028,11 +2033,11 @@ function renderTemplateTargetPanel() {
   const wrap = document.createElement("div");
   wrap.className = "form";
   wrap.appendChild(fieldRow(
-    "Printer model",
+    t("template.printerModel"),
     selectStringOptions(currentPrinterModel, TEMPLATE_TARGET_PRINTER_MODELS, (value) => updateTemplateTarget(value, currentPrintMode))
   ));
   wrap.appendChild(fieldRow(
-    "Print mode",
+    t("template.printMode"),
     createMaterialSelect(
       EMPTY_TEMPLATE_PRINT_MODES.map((mode) => ({ value: mode, label: mode })),
       currentPrintMode,
@@ -2042,7 +2047,7 @@ function renderTemplateTargetPanel() {
 
   const note = document.createElement("div");
   note.className = "note";
-  note.textContent = `Header DesignedFor: ${buildDesignedForLabel(currentPrinterModel, currentPrintMode)}`;
+  note.textContent = t("template.designedFor", { value: buildDesignedForLabel(currentPrinterModel, currentPrintMode) });
 
   elTemplateTargetPanel.appendChild(wrap);
   elTemplateTargetPanel.appendChild(note);

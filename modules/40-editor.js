@@ -119,7 +119,7 @@ function createMultiFontSizeInput(fields) {
   inp.step = "1";
   inp.min = "1";
   inp.value = current.mixed || current.value == null ? "" : String(current.value);
-  if (current.mixed) inp.placeholder = "Mixed";
+  if (current.mixed) inp.placeholder = t("common.mixed");
 
   let lastEmitted = current.mixed ? null : current.value;
   const emit = () => {
@@ -149,7 +149,7 @@ function buildMultiSelectionProps(fields) {
   const note = document.createElement("div");
   note.className = "note";
   const fontFields = fields.filter(supportsFontSizeEditing);
-  note.innerHTML = `<strong>Selected</strong><br>${fields.length} items.`;
+  note.innerHTML = `<strong>${t("status.selected")}</strong><br>${t("status.selectedMultiple", { count: fields.length })}`;
   wrap.appendChild(note);
   wrap.appendChild(createDeleteControlButton());
 
@@ -157,10 +157,10 @@ function buildMultiSelectionProps(fields) {
   const firstRotation = rotations[0] ?? 0;
   const hasMixedRotation = rotations.some((rotation) => rotation !== firstRotation);
   const rotationOptions = hasMixedRotation
-    ? [{ value: "", label: "Mixed" }, ...ALLOWED_ORIENTATIONS.map((deg) => ({ value: String(deg), label: `${deg}\u00B0` }))]
+    ? [{ value: "", label: t("common.mixed") }, ...ALLOWED_ORIENTATIONS.map((deg) => ({ value: String(deg), label: `${deg}\u00B0` }))]
     : ALLOWED_ORIENTATIONS.map((deg) => ({ value: String(deg), label: `${deg}\u00B0` }));
 
-  wrap.appendChild(fieldRow("Rotation", createMaterialSelect(
+  wrap.appendChild(fieldRow(t("field.rotation"), createMaterialSelect(
     rotationOptions,
     hasMixedRotation ? "" : String(firstRotation),
     (nextValue) => {
@@ -178,7 +178,7 @@ function buildMultiSelectionProps(fields) {
   )));
 
   if (fontFields.length) {
-    wrap.appendChild(fieldRow("Font size", createMultiFontSizeInput(fontFields)));
+    wrap.appendChild(fieldRow(t("field.fontSize"), createMultiFontSizeInput(fontFields)));
   }
 
   return wrap;
@@ -196,7 +196,7 @@ function createPrintControlCard(field) {
 
   const title = document.createElement("div");
   title.className = "printControlCard__title";
-  title.textContent = "Print output";
+  title.textContent = t("field.printOutput");
 
   const status = document.createElement("span");
   status.className = "printControlCard__status";
@@ -217,7 +217,7 @@ function createPrintControlCard(field) {
     field.printed = value;
     syncPrintState(value);
     window.setTimeout(renderAll, PRINT_SWITCH_ANIMATION_MS);
-  }, { ariaLabel: "Print output" });
+  }, { ariaLabel: t("field.printOutput") });
 
   titleRow.appendChild(title);
   // titleRow.appendChild(status);
@@ -235,8 +235,8 @@ function createDeleteControlButton() {
   const btn = document.createElement("button");
   btn.type = "button";
   btn.className = "btn btn--danger deleteControlCard";
-  btn.textContent = "Delete selected";
-  btn.setAttribute("aria-label", "Delete selected object");
+  btn.textContent = t("object.delete");
+  btn.setAttribute("aria-label", t("object.delete"));
   btn.addEventListener("click", () => deleteSelected());
   return btn;
 }
@@ -254,19 +254,19 @@ function buildCommonProps(f) {
   wrap.appendChild(createPrintControlCard(f));
   wrap.appendChild(createDeleteControlButton());
   wrap.appendChild(createPropsDivider());
-  wrap.appendChild(fieldRow("Name", inputText(f.name, (v) => renameField(f, v))));
+  wrap.appendChild(fieldRow(t("field.name"), inputText(f.name, (v) => renameField(f, v))));
   if (f.fldType === "FixedText") {
-    wrap.appendChild(fieldRow("Type", buildFixedTextEntryModeSelect(f)));
+    wrap.appendChild(fieldRow(t("field.type"), buildFixedTextEntryModeSelect(f)));
   } else {
-    wrap.appendChild(fieldRow("Type", inputText(f.fldType, () => {}, { disabled: true })));
+    wrap.appendChild(fieldRow(t("field.type"), inputText(f.fldType, () => {}, { disabled: true })));
   }
-  wrap.appendChild(fieldRow("Max characters", inputText(formatMaxCharacters(f.data?.maxChars), () => {}, { readOnly: true })));
+  wrap.appendChild(fieldRow(t("field.maxCharacters"), inputText(formatMaxCharacters(f.data?.maxChars), () => {}, { readOnly: true })));
 
-  wrap.appendChild(fieldRow("X (mm)", inputNumber(internalToMm(f.geom.x), (v) => { pushHistory(); f.geom.x = mmToInternal(v); renderAll(); })));
-  wrap.appendChild(fieldRow("Y (mm)", inputNumber(internalToMm(f.geom.y), (v) => { pushHistory(); f.geom.y = mmToInternal(v); renderAll(); })));
-  wrap.appendChild(fieldRow("Width (mm)", inputNumber(internalToMm(f.geom.w), (v) => { pushHistory(); f.geom.w = mmToInternal(v); renderAll(); })));
-  wrap.appendChild(fieldRow("Height (mm)", inputNumber(internalToMm(f.geom.h), (v) => { pushHistory(); f.geom.h = mmToInternal(v); renderAll(); })));
-  wrap.appendChild(fieldRow("Rotation", selectOrientation(f.orientation, (v) => {
+  wrap.appendChild(fieldRow(t("field.x"), inputNumber(internalToMm(f.geom.x), (v) => { pushHistory(); f.geom.x = mmToInternal(v); renderAll(); })));
+  wrap.appendChild(fieldRow(t("field.y"), inputNumber(internalToMm(f.geom.y), (v) => { pushHistory(); f.geom.y = mmToInternal(v); renderAll(); })));
+  wrap.appendChild(fieldRow(t("field.width"), inputNumber(internalToMm(f.geom.w), (v) => { pushHistory(); f.geom.w = mmToInternal(v); renderAll(); })));
+  wrap.appendChild(fieldRow(t("field.height"), inputNumber(internalToMm(f.geom.h), (v) => { pushHistory(); f.geom.h = mmToInternal(v); renderAll(); })));
+  wrap.appendChild(fieldRow(t("field.rotation"), selectOrientation(f.orientation, (v) => {
     pushHistory();
     f.orientation = v;
     renderObjects();
@@ -279,8 +279,8 @@ function buildCommonProps(f) {
 function buildFixedTextEntryModeSelect(field) {
   const currentMode = getTextEntryMode(field);
   return createMaterialSelect([
-    { value: "fixed", label: "Fixed Text" },
-    { value: "user", label: "User Entered Text" }
+    { value: "fixed", label: t("field.fixedText") },
+    { value: "user", label: t("field.userEnteredText") }
   ], currentMode, (nextValue) => {
     pushHistory();
     applyFixedTextEntryMode(field, nextValue);
@@ -366,32 +366,32 @@ function buildTextLikeProps(f) {
       });
 
   if (isDynamicPreviewField) valueInput.dataset.dynamicPreviewValue = "1";
-  wrap.appendChild(fieldRow("Value", valueInput));
+  wrap.appendChild(fieldRow(t("field.value"), valueInput));
 
   if (f.fldType === "CounterText") {
     const counter = f.data.counter ?? {};
     const noOfChars = Math.max(1, Math.round(parseCounterNumber(counter.noOfChars, 4) ?? 4));
     const maxValue = getCounterMaxValue(noOfChars);
 
-    wrap.appendChild(fieldRow("Digits", inputNumber(noOfChars, (v) => {
+    wrap.appendChild(fieldRow(t("counter.digits"), inputNumber(noOfChars, (v) => {
       applyCounterFieldChange(f, (next) => {
         next.noOfChars = Math.max(1, Math.round(v));
       });
     }, { step: 1, integer: true, min: 1 })));
 
-    wrap.appendChild(fieldRow("Start", inputNumber(parseCounterNumber(counter.startVal, 1) ?? 1, (v) => {
+    wrap.appendChild(fieldRow(t("counter.start"), inputNumber(parseCounterNumber(counter.startVal, 1) ?? 1, (v) => {
       applyCounterFieldChange(f, (next) => {
         next.startVal = String(Math.max(0, Math.round(v)));
       });
     }, { step: 1, integer: true, min: 0, max: maxValue })));
 
-    wrap.appendChild(fieldRow("End", inputNumber(parseCounterNumber(counter.endVal, maxValue) ?? maxValue, (v) => {
+    wrap.appendChild(fieldRow(t("counter.end"), inputNumber(parseCounterNumber(counter.endVal, maxValue) ?? maxValue, (v) => {
       applyCounterFieldChange(f, (next) => {
         next.endVal = String(Math.max(0, Math.round(v)));
       });
     }, { step: 1, integer: true, min: 0, max: maxValue })));
 
-    wrap.appendChild(fieldRow("Step", inputNumber(parseCounterNumber(counter.stepSize, 1) ?? 1, (v) => {
+    wrap.appendChild(fieldRow(t("counter.step"), inputNumber(parseCounterNumber(counter.stepSize, 1) ?? 1, (v) => {
       applyCounterFieldChange(f, (next) => {
         next.stepSize = Math.max(1, Math.round(v));
       });
@@ -399,20 +399,20 @@ function buildTextLikeProps(f) {
 
     const note = document.createElement("div");
     note.className = "note";
-    note.textContent = `Maximum value for ${noOfChars} digits: ${formatCounterValue(maxValue, noOfChars)}`;
+    note.textContent = t("counter.maxValue", { digits: noOfChars, value: formatCounterValue(maxValue, noOfChars) });
     wrap.appendChild(note);
 
     const hr = document.createElement("div");
     hr.className = "hr";
     wrap.appendChild(hr);
 
-    wrap.appendChild(fieldRow("Font size", inputNumber(getEffectiveTextPitch(f, 10), (v) => {
+    wrap.appendChild(fieldRow(t("field.fontSize"), inputNumber(getEffectiveTextPitch(f, 10), (v) => {
       pushHistory();
       f.text.pitch = Math.max(1, Math.round(v));
       refreshFieldCanvasPreview(f);
     }, { step: 1, integer: true, min: 1, live: true })));
 
-    wrap.appendChild(fieldRow("XMag (%)", inputNumber(f.text.xMag ?? 100, (v) => {
+    wrap.appendChild(fieldRow(t("field.xMag"), inputNumber(f.text.xMag ?? 100, (v) => {
       pushHistory();
       f.text.xMag = clamp(X_MAG_MIN, X_MAG_MAX, Math.round(v));
       refreshFieldCanvasPreview(f);
@@ -427,8 +427,8 @@ function buildTextLikeProps(f) {
     if (f.fldType === "DateText" || f.fldType === "OffsetDateText") {
       const dateTypeValue = f.fldType === "OffsetDateText" ? "calculated" : "current";
       const dateTypeSelect = createMaterialSelect([
-        { value: "current", label: "Current Date" },
-        { value: "calculated", label: "Calculated Date" }
+        { value: "current", label: t("field.currentDate") },
+        { value: "calculated", label: t("field.calculatedDate") }
       ], dateTypeValue, (nextValue) => {
         const nextType = nextValue === "calculated" ? "OffsetDateText" : "DateText";
         if (nextType === f.fldType) return;
@@ -438,7 +438,7 @@ function buildTextLikeProps(f) {
         if (nextType === "OffsetDateText") ensureCalculatedDateOffset(f);
         renderAll();
       });
-      wrap.appendChild(fieldRow("Date type", dateTypeSelect));
+      wrap.appendChild(fieldRow(t("field.dateType"), dateTypeSelect));
     }
 
     if (f.fldType === "TimeText") {
@@ -460,10 +460,10 @@ function buildTextLikeProps(f) {
       );
     }
 
-    wrap.appendChild(fieldRow(f.fldType === "TimeText" ? "Time format" : "Date format", formatInput));
+    wrap.appendChild(fieldRow(f.fldType === "TimeText" ? t("field.timeFormat") : t("field.dateFormat"), formatInput));
 
     if (f.fldType === "TimeText") {
-      wrap.appendChild(fieldRow("Separator", selectTimeSeparator(getTimeSeparator(f.data.defaultValue || ""), (v) => {
+      wrap.appendChild(fieldRow(t("field.separator"), selectTimeSeparator(getTimeSeparator(f.data.defaultValue || ""), (v) => {
         pushHistory();
         f.data.defaultValue = buildTimeTemplateFormat(getTimeFormatPreset(f.data.defaultValue || ""), v);
         refreshSelectedDynamicFieldPreview();
@@ -471,7 +471,7 @@ function buildTextLikeProps(f) {
     }
 
     if (f.fldType === "DateText" || f.fldType === "OffsetDateText") {
-      wrap.appendChild(fieldRow("Separator", selectDateSeparator(getDateSeparator(f.data.defaultValue || ""), (v) => {
+      wrap.appendChild(fieldRow(t("field.separator"), selectDateSeparator(getDateSeparator(f.data.defaultValue || ""), (v) => {
         pushHistory();
         f.data.defaultValue = buildDateTemplateFormat(getDateFormatPreset(f.data.defaultValue || ""), v);
         refreshSelectedDynamicFieldPreview();
@@ -479,7 +479,7 @@ function buildTextLikeProps(f) {
     }
 
     if (f.fldType === "OffsetDateText") {
-      wrap.appendChild(fieldRow("Offset", selectOffsetName(f.data.offsetRef, (v) => {
+      wrap.appendChild(fieldRow(t("field.offset"), selectOffsetName(f.data.offsetRef, (v) => {
         pushHistory();
         f.data.offsetRef = v || null;
         refreshSelectedDynamicFieldPreview();
@@ -487,13 +487,13 @@ function buildTextLikeProps(f) {
     }
   }
 
-  wrap.appendChild(fieldRow("Font size", inputNumber(getEffectiveTextPitch(f, 10), (v) => {
+  wrap.appendChild(fieldRow(t("field.fontSize"), inputNumber(getEffectiveTextPitch(f, 10), (v) => {
     pushHistory();
     f.text.pitch = Math.max(1, Math.round(v));
     refreshFieldCanvasPreview(f);
   }, { step: 1, integer: true, min: 1, live: true })));
 
-  wrap.appendChild(fieldRow("XMag (%)", inputNumber(f.text.xMag ?? 100, (v) => {
+  wrap.appendChild(fieldRow(t("field.xMag"), inputNumber(f.text.xMag ?? 100, (v) => {
     pushHistory();
     f.text.xMag = clamp(X_MAG_MIN, X_MAG_MAX, Math.round(v));
     refreshFieldCanvasPreview(f);
@@ -506,12 +506,12 @@ function buildBarcodeProps(f) {
   const wrap = document.createElement("div");
   wrap.className = "form";
 
-  wrap.appendChild(fieldRow("QuietMargin", inputNumber(f.barcode.quietMargin ?? 0, (v) => {
+  wrap.appendChild(fieldRow(t("datamatrix.quietMargin"), inputNumber(f.barcode.quietMargin ?? 0, (v) => {
     pushHistory();
     f.barcode.quietMargin = Math.max(0, Math.round(v));
   })));
 
-  wrap.appendChild(fieldRow("Symbol size", selectSymbolSize(f.barcode.dataMatrix.symbolSize, (v) => {
+  wrap.appendChild(fieldRow(t("datamatrix.symbolSize"), selectSymbolSize(f.barcode.dataMatrix.symbolSize, (v) => {
     pushHistory();
     const nextSymbolSize = normalizeDataMatrixSymbolSizeValue(v, "22X22");
     if (DM_PROFILES[nextSymbolSize]) applyDmProfile(f, nextSymbolSize);
@@ -520,7 +520,7 @@ function buildBarcodeProps(f) {
     renderAll();
   })));
 
-  wrap.appendChild(fieldRow("Module size (mm)", selectDataMatrixModuleSize(f.barcode.dataMatrix.moduleSize, (v) => {
+  wrap.appendChild(fieldRow(t("datamatrix.moduleSize"), selectDataMatrixModuleSize(f.barcode.dataMatrix.moduleSize, (v) => {
     pushHistory();
     f.barcode.dataMatrix.moduleSize = normalizeDataMatrixModuleSizeValue(v);
     syncDataMatrixGeomToModuleSize(f);
@@ -536,13 +536,13 @@ function buildDataMatrixPanel(f) {
   wrap.className = "form";
 
   const profileSelect = createMaterialSelect([
-    { value: "", label: "(none)" },
+    { value: "", label: t("common.none") },
     { value: "22X22", label: "22X22" },
     { value: "36X36", label: "36X36" }
   ], "", () => {});
-  wrap.appendChild(fieldRow("Profile", profileSelect));
+  wrap.appendChild(fieldRow(t("datamatrix.profile"), profileSelect));
 
-  const applyBtn = createPanelActionButton("md-filled-tonal-button", "Apply profile", () => {
+  const applyBtn = createPanelActionButton("md-filled-tonal-button", t("datamatrix.applyProfile"), () => {
     const p = profileSelect.value;
     if (!p) return;
     pushHistory();
@@ -555,11 +555,11 @@ function buildDataMatrixPanel(f) {
   const val = validateDmProfile(f, dm.symbolSize);
   const vcard = document.createElement("div");
   vcard.className = "card";
-  vcard.innerHTML = `<div class="card__head"><div class="card__title">Validation</div><div class="pill">${val.length ? "!" : "OK"}</div></div>`;
+  vcard.innerHTML = `<div class="card__head"><div class="card__title">${t("validation.title")}</div><div class="pill">${val.length ? "!" : "OK"}</div></div>`;
   const vbody = document.createElement("div");
   vbody.className = "muted";
   vbody.style.whiteSpace = "pre-wrap";
-  vbody.textContent = val.length ? val.map((x) => "- " + x).join("\n") : "Profile matches the current SymbolSize.";
+  vbody.textContent = val.length ? val.map((x) => "- " + x).join("\n") : t("datamatrix.validationOk");
   vcard.appendChild(vbody);
   wrap.appendChild(vcard);
 
@@ -570,10 +570,10 @@ function buildDataMatrixPanel(f) {
   segHead.className = "card__head";
   const segTitle = document.createElement("div");
   segTitle.className = "card__title";
-  segTitle.textContent = "Segments";
+  segTitle.textContent = t("datamatrix.segments");
   const segActions = document.createElement("div");
   segActions.className = "smallRow";
-  const segAddBtn = createPanelActionButton("md-filled-tonal-button", "Add segment", () => {
+  const segAddBtn = createPanelActionButton("md-filled-tonal-button", t("datamatrix.addSegment"), () => {
     pushHistory();
     dm.segments.push({ index: dm.segments.length, srcField: null, defaultValue: "", dataType: 5 });
     normalizeDmSegments(dm);
@@ -674,7 +674,7 @@ function renderHiddenEditor() {
 
     const actions = document.createElement("div");
     actions.className = "smallRow";
-    const selectBtn = createPanelActionButton("md-text-button", "Select", () => {
+    const selectBtn = createPanelActionButton("md-text-button", t("common.select"), () => {
       selectField(f.name);
       renderAll();
     });
@@ -692,7 +692,7 @@ function renderHiddenEditor() {
       refreshCanvasPreviews();
     });
 
-    grid.appendChild(labeledMini("Value", inpVal));
+    grid.appendChild(labeledMini(t("field.value"), inpVal));
 
     card.appendChild(head);
     card.appendChild(grid);
@@ -707,7 +707,7 @@ function renderOffsetsEditor() {
   if (!state.dateOffsetsLoaded && state.dateOffsets.length === 0) {
     const note = document.createElement("div");
     note.className = "muted";
-    note.textContent = "No DateOffset entries in file.";
+    note.textContent = t("offsets.empty");
     elOffsetsEditor.appendChild(note);
     return;
   }
@@ -732,7 +732,7 @@ function renderOffsetsEditor() {
 
     const actions = document.createElement("div");
     actions.className = "smallRow";
-    const delBtn = createPanelActionButton("md-outlined-button", "Delete", () => {
+    const delBtn = createPanelActionButton("md-outlined-button", t("common.delete"), () => {
       pushHistory();
       state.dateOffsets.splice(idx, 1);
       state.dateOffsetsDirty = true;
@@ -778,16 +778,16 @@ function renderOffsetsEditor() {
       refreshCanvasPreviews();
     });
 
-    grid.appendChild(labeledMini("Year", inY));
-    grid.appendChild(labeledMini("Month", inM));
-    grid.appendChild(labeledMini("Day", inD));
+    grid.appendChild(labeledMini(t("offsets.year"), inY));
+    grid.appendChild(labeledMini(t("offsets.month"), inM));
+    grid.appendChild(labeledMini(t("offsets.day"), inD));
 
     card.appendChild(grid);
 
     const current = getComputedDateOffsetCurrent(o);
     const note = document.createElement("div");
     note.className = "note";
-    note.textContent = `Current offset: ${pad2(current.d)}.${pad2(current.m)}.${String(current.y)}`;
+    note.textContent = t("offsets.current", { date: `${pad2(current.d)}.${pad2(current.m)}.${String(current.y)}` });
     card.appendChild(note);
 
     elOffsetsEditor.appendChild(card);

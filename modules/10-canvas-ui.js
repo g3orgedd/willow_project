@@ -392,6 +392,9 @@ function initMobilePanelMenu() {
 
 // ---------- UI init ----------
 function initUI() {
+  if (typeof initUiLanguageControls === "function") initUiLanguageControls();
+  if (typeof onUiLanguageChange === "function") onUiLanguageChange(() => renderAll());
+
   // Tabs
   document.querySelectorAll(".tab").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -479,7 +482,7 @@ function initUI() {
   });
 
   updateHiddenCanvasToggleButton();
-  elStatusLeft.textContent = "Open a CIFF file (.ciff/.xml).";
+  elStatusLeft.textContent = t("status.openFile");
   elStatusRight.textContent = "-";
 }
 

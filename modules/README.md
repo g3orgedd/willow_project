@@ -3,6 +3,9 @@
 - `00-core.js`
   Constants, shared state, DOM references, Konva runtime variables.
 
+- `05-i18n.js`
+  UI translation dictionaries, language switching, and static text application.
+
 - `10-canvas-ui.js`
   Canvas initialization, stage interaction, top-level UI event wiring.
 

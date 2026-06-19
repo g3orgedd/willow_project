@@ -65,6 +65,39 @@ const DM_HELPER_FIELD_NAMES = [...new Set(Object.values(DM_PROFILES).flatMap((pr
 
 const DATA_MATRIX_SYMBOLS = [
   {
+    name: "14X14",
+    symbolRows: 14,
+    symbolCols: 14,
+    dataRegionRows: 12,
+    dataRegionCols: 12,
+    regionRows: 1,
+    regionCols: 1,
+    dataCodewords: 8,
+    errorCodewords: 10
+  },
+  {
+    name: "16X16",
+    symbolRows: 16,
+    symbolCols: 16,
+    dataRegionRows: 14,
+    dataRegionCols: 14,
+    regionRows: 1,
+    regionCols: 1,
+    dataCodewords: 12,
+    errorCodewords: 12
+  },
+  {
+    name: "18X18",
+    symbolRows: 18,
+    symbolCols: 18,
+    dataRegionRows: 16,
+    dataRegionCols: 16,
+    regionRows: 1,
+    regionCols: 1,
+    dataCodewords: 18,
+    errorCodewords: 14
+  },
+  {
     name: "20X20",
     symbolRows: 20,
     symbolCols: 20,
@@ -85,6 +118,39 @@ const DATA_MATRIX_SYMBOLS = [
     regionCols: 1,
     dataCodewords: 30,
     errorCodewords: 20
+  },
+  {
+    name: "24X24",
+    symbolRows: 24,
+    symbolCols: 24,
+    dataRegionRows: 22,
+    dataRegionCols: 22,
+    regionRows: 1,
+    regionCols: 1,
+    dataCodewords: 36,
+    errorCodewords: 24
+  },
+  {
+    name: "26X26",
+    symbolRows: 26,
+    symbolCols: 26,
+    dataRegionRows: 24,
+    dataRegionCols: 24,
+    regionRows: 1,
+    regionCols: 1,
+    dataCodewords: 44,
+    errorCodewords: 28
+  },
+  {
+    name: "32X32",
+    symbolRows: 32,
+    symbolCols: 32,
+    dataRegionRows: 14,
+    dataRegionCols: 14,
+    regionRows: 2,
+    regionCols: 2,
+    dataCodewords: 62,
+    errorCodewords: 36
   },
   {
     name: "36X36",

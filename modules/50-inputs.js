@@ -343,9 +343,30 @@ function getSupportedSeparatorValue(value, options, fallback) {
   return options.some(opt => opt.value === current) ? current : fallback;
 }
 
+function getSeparatorLabelKey(value) {
+  if (value === "") return "separator.none";
+  if (value === " ") return "separator.space";
+  if (value === ":") return "separator.colon";
+  if (value === ".") return "separator.dot";
+  if (value === ",") return "separator.comma";
+  if (value === "-") return "separator.dash";
+  if (value === "\\") return "separator.backslash";
+  return null;
+}
+
+function localizeSeparatorOptions(options) {
+  return options.map((option) => {
+    const labelKey = getSeparatorLabelKey(option.value);
+    return {
+      value: option.value,
+      label: labelKey ? t(labelKey) : option.label
+    };
+  });
+}
+
 function selectTimeSeparator(value, onChange) {
   const current = getSupportedSeparatorValue(value, TIME_SEPARATOR_OPTIONS, ":");
-  return createMaterialSelect(TIME_SEPARATOR_OPTIONS, current, onChange);
+  return createMaterialSelect(localizeSeparatorOptions(TIME_SEPARATOR_OPTIONS), current, onChange);
 }
 
 function selectDateFormat(value, locale, onChange) {
@@ -368,7 +389,7 @@ function selectDateFormat(value, locale, onChange) {
 
 function selectDateSeparator(value, onChange) {
   const current = getSupportedSeparatorValue(value, DATE_SEPARATOR_OPTIONS, ".");
-  return createMaterialSelect(DATE_SEPARATOR_OPTIONS, current, onChange);
+  return createMaterialSelect(localizeSeparatorOptions(DATE_SEPARATOR_OPTIONS), current, onChange);
 }
 
 function normalizeTimeFormat(value) {

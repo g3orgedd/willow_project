@@ -3,6 +3,7 @@ if (typeof window !== "undefined" && typeof document !== "undefined") {
 (function () {
   const moduleList = [
     { key: "core", src: "./modules/00-core.js", checks: ["CIFF_EDITOR_CORE_READY"] },
+    { key: "i18n", src: "./modules/05-i18n.js", checks: ["t", "initUiLanguageControls"] },
     { key: "canvasUi", src: "./modules/10-canvas-ui.js", checks: ["initCanvas", "initUI"] },
     { key: "xmlLoad", src: "./modules/20-xml-load.js", checks: ["loadXml", "parseFields"] },
     { key: "rendering", src: "./modules/30-rendering.js", checks: ["renderAll", "startDynamicFieldValueTicker"] },
