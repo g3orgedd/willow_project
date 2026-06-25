@@ -996,6 +996,21 @@ textarea {
   gap: 10px;
 }
 
+.card__grid.dmSegmentGrid {
+  grid-template-columns: minmax(90px, 0.8fr) minmax(150px, 1.8fr);
+  align-items: end;
+}
+
+.card__grid.dmSegmentGrid > * {
+  min-width: 0;
+}
+
+.card__grid.dmSegmentGrid .input,
+.card__grid.dmSegmentGrid .select {
+  width: 100%;
+  max-width: none;
+}
+
 .note {
   margin-top: 10px;
   color: var(--md-sys-color-on-surface-variant);

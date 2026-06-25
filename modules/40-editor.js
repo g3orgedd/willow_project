@@ -591,7 +591,7 @@ function buildDataMatrixPanel(f) {
 
   dm.segments.forEach((s, idx) => {
     const row = document.createElement("div");
-    row.className = "card";
+    row.className = "card dmSegmentCard";
     row.style.padding = "15px";
     row.innerHTML = `
       <div class="card__head" style="margin-bottom:6px">
@@ -611,7 +611,7 @@ function buildDataMatrixPanel(f) {
     `;
 
     const grid = document.createElement("div");
-    grid.className = "card__grid";
+    grid.className = "card__grid dmSegmentGrid";
 
     const srcSel = createMaterialSelect(
       [{ value: "", label: "(none)" }, ...state.fields.map((ff) => ({ value: ff.name, label: ff.name }))],
