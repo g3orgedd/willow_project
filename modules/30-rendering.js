@@ -983,10 +983,10 @@ function makeDataMatrixPreviewNode(field, wPx, hPx, now = new Date()) {
   const matrix = preview.matrix;
   const rows = matrix.length;
   const cols = matrix[0]?.length || 0;
-  const quietModules = getDataMatrixQuietZoneModules();
+  const quietModules = getDataMatrixQuietZoneModules(field);
   const paddedRows = rows + quietModules * 2;
   const paddedCols = cols + quietModules * 2;
-  const moduleSize = mmToPx(normalizeDataMatrixModuleSizeValue(field.barcode?.dataMatrix?.moduleSize ?? 0.5));
+  const moduleSize = mmToPx(getDataMatrixEffectiveModuleSize(field, null, now));
   if (!Number.isFinite(moduleSize) || moduleSize <= 0) {
     return makeDataMatrixFallbackNode(field, wPx, hPx, "Preview too small");
   }
@@ -1066,8 +1066,10 @@ function serializeDataMatrixModuleSize(value) {
   return String(Math.round(normalizeDataMatrixModuleSizeValue(value) * 100));
 }
 
-function getDataMatrixQuietZoneModules() {
-  return 1;
+function getDataMatrixQuietZoneModules(field = null) {
+  const quietMargin = Number(field?.barcode?.quietMargin ?? 0);
+  if (!Number.isFinite(quietMargin) || quietMargin <= 0) return 0;
+  return Math.round(quietMargin);
 }
 
 function getDataMatrixEffectiveSymbolInfo(field, now = new Date()) {
@@ -1082,7 +1084,7 @@ function getDataMatrixTotalModules(field, now = new Date()) {
   const symbolInfo = getDataMatrixEffectiveSymbolInfo(field, now);
   if (!symbolInfo) return null;
 
-  const quietModules = getDataMatrixQuietZoneModules();
+  const quietModules = getDataMatrixQuietZoneModules(field);
   return {
     cols: symbolInfo.symbolCols + (quietModules * 2),
     rows: symbolInfo.symbolRows + (quietModules * 2),
@@ -1094,13 +1096,34 @@ function getDataMatrixFieldSizeMm(field, moduleSize = null, now = new Date()) {
   const totalModules = getDataMatrixTotalModules(field, now);
   if (!totalModules) return null;
 
-  const moduleSizeMm = normalizeDataMatrixModuleSizeValue(moduleSize ?? field.barcode?.dataMatrix?.moduleSize ?? 0.5);
+  const moduleSizeMm = getDataMatrixEffectiveModuleSize(field, moduleSize, now);
   return {
     w: totalModules.cols * moduleSizeMm,
     h: totalModules.rows * moduleSizeMm,
     moduleSize: moduleSizeMm,
     symbolInfo: totalModules.symbolInfo
   };
+}
+
+function getDataMatrixModuleSizeFromGeom(field, now = new Date()) {
+  const totalModules = getDataMatrixTotalModules(field, now);
+  if (!totalModules) return null;
+
+  const widthModule = totalModules.cols > 0 ? internalToMm(field?.geom?.w ?? 0) / totalModules.cols : null;
+  const heightModule = totalModules.rows > 0 ? internalToMm(field?.geom?.h ?? 0) / totalModules.rows : null;
+  const candidates = [widthModule, heightModule].filter((value) => Number.isFinite(value) && value > 0);
+  if (!candidates.length) return null;
+
+  return normalizeDataMatrixModuleSizeValue(candidates.reduce((sum, value) => sum + value, 0) / candidates.length);
+}
+
+function getDataMatrixEffectiveModuleSize(field, moduleSize = null, now = new Date()) {
+  if (moduleSize != null && moduleSize !== "") return normalizeDataMatrixModuleSizeValue(moduleSize);
+
+  const storedModuleSize = field?.barcode?.dataMatrix?.moduleSize;
+  if (storedModuleSize != null && storedModuleSize !== "") return normalizeDataMatrixModuleSizeValue(storedModuleSize);
+
+  return getDataMatrixModuleSizeFromGeom(field, now) ?? normalizeDataMatrixModuleSizeValue(0.5);
 }
 
 function syncDataMatrixGeomToModuleSize(field, now = new Date()) {
@@ -1115,7 +1138,7 @@ function syncDataMatrixGeomToModuleSize(field, now = new Date()) {
 
 function getNearestDataMatrixModuleSizeForGeom(field, wPx, hPx, now = new Date()) {
   const totalModules = getDataMatrixTotalModules(field, now);
-  if (!totalModules) return normalizeDataMatrixModuleSizeValue(field.barcode?.dataMatrix?.moduleSize ?? 0.5);
+  if (!totalModules) return getDataMatrixEffectiveModuleSize(field, null, now);
 
   const widthModule = pxToMm(wPx) / Math.max(1, totalModules.cols);
   const heightModule = pxToMm(hPx) / Math.max(1, totalModules.rows);

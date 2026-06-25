@@ -320,8 +320,11 @@ function parseFieldNode(node) {
   const bcH = node.querySelector("Barcode > BcH") ? toInt(node.querySelector("Barcode > BcH")?.textContent, null) : null;
 
   const dmNode = node.querySelector("Barcode > DataMatrix");
+  const explicitModuleSize = dmNode?.querySelector("ModuleSize")
+    ? normalizeDataMatrixModuleSizeValue(toFloat(dmNode.querySelector("ModuleSize")?.textContent, 0.5))
+    : null;
   const dm = dmNode ? {
-    moduleSize: dmNode.querySelector("ModuleSize") ? normalizeDataMatrixModuleSizeValue(toFloat(dmNode.querySelector("ModuleSize")?.textContent, 0.5)) : null,
+    moduleSize: explicitModuleSize,
     symbolSize: normalizeDataMatrixSymbolSizeValue(dmNode.querySelector("SymbolSize")?.textContent, "22X22"),
     segments: parseDataMatrixSegments(node)
   } : null;
@@ -341,7 +344,7 @@ function parseFieldNode(node) {
     : null;
   const cntClrStCntType = objNode?.querySelector("CounterText > SubCnt > ClrStCntType")?.textContent ?? "";
 
-  return {
+  const field = {
     sourceName: name,
     name,
     fldType,
@@ -379,6 +382,12 @@ function parseFieldNode(node) {
 
     _konva: null
   };
+
+  if (field.barcode?.dataMatrix && field.barcode.dataMatrix.moduleSize == null) {
+    field.barcode.dataMatrix.moduleSize = inferDataMatrixModuleSizeFromGeom(field);
+  }
+
+  return field;
 }
 
 function parseDataMatrixSegments(fieldNode) {
@@ -395,5 +404,23 @@ function parseDataMatrixSegments(fieldNode) {
   segs.sort((a,b) => a.index - b.index);
   segs.forEach((s, j) => s.index = j);
   return segs;
+}
+
+function inferDataMatrixModuleSizeFromGeom(field) {
+  const dm = field?.barcode?.dataMatrix;
+  if (!dm) return null;
+
+  const symbolInfo = DATA_MATRIX_SYMBOLS_BY_NAME.get(normalizeDataMatrixSymbolSizeValue(dm.symbolSize, "22X22"));
+  if (!symbolInfo) return null;
+
+  const quietModules = Math.max(0, Math.round(Number(field.barcode?.quietMargin ?? 0) || 0));
+  const totalCols = symbolInfo.symbolCols + (quietModules * 2);
+  const totalRows = symbolInfo.symbolRows + (quietModules * 2);
+  const widthModule = totalCols > 0 ? internalToMm(field.geom?.w ?? 0) / totalCols : null;
+  const heightModule = totalRows > 0 ? internalToMm(field.geom?.h ?? 0) / totalRows : null;
+  const candidates = [widthModule, heightModule].filter((value) => Number.isFinite(value) && value > 0);
+  if (!candidates.length) return null;
+
+  return normalizeDataMatrixModuleSizeValue(candidates.reduce((sum, value) => sum + value, 0) / candidates.length);
 }
 
