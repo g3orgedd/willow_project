@@ -345,8 +345,9 @@ function renderGrid() {
   }));
 
   if (elToggleGrid.checked) {
-    const stepPx = mmToPx(GRID_MM);
-    const finePx = mmToPx(GRID_MM / 2);
+    const gridMm = GRID_SIZE_OPTIONS.includes(Number(state.gridMm)) ? Number(state.gridMm) : GRID_MM;
+    const stepPx = mmToPx(gridMm);
+    const finePx = mmToPx(gridMm / 2);
 
     for (let x = 0; x <= wPx; x += finePx) gridLayer.add(new Konva.Line({ points:[x,0,x,hPx], stroke:"rgba(0,0,0,0.05)", strokeWidth:1 }));
     for (let y = 0; y <= hPx; y += finePx) gridLayer.add(new Konva.Line({ points:[0,y,wPx,y], stroke:"rgba(0,0,0,0.05)", strokeWidth:1 }));

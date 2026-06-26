@@ -732,12 +732,16 @@ textarea {
   display: none;
 }
 
-.languageSettings {
+.advancedSelectSetting {
   /* width: min(176px, 100%); */
   margin-bottom: 0;
 }
 
-.languageSettings .fieldRow {
+.advancedSelectSetting + .advancedSelectSetting {
+  margin-top: 10px;
+}
+
+.advancedSelectSetting .fieldRow {
   display: grid;
   grid-template-columns: 1fr;
   gap: 3px;
@@ -749,19 +753,19 @@ textarea {
   background: color-mix(in srgb, var(--md-sys-color-surface-container-highest) 70%, transparent);
 }
 
-.languageSettings .fieldRow label {
+.advancedSelectSetting .fieldRow label {
   min-height: 18px;
   padding-bottom: 5px;
   padding-inline: 10px;
   color: var(--md-sys-color-on-surface-variant);
-  font-size: 0.78rem;
+  font-size: 0.875rem;
   line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.languageSettings .fieldRow .select {
+.advancedSelectSetting .fieldRow .select {
   min-width: 0;
 }
 

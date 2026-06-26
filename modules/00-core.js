@@ -14,6 +14,7 @@ const MM_TO_PX_BASE = 12;          // 1mm -> px at zoom=100%
 const INTERNAL_PER_MM = 100;       // CIFF units: 0.01mm
 const SNAP_MM = 0.10;              // snap step in mm
 const GRID_MM = 1.0;               // grid step in mm
+const GRID_SIZE_OPTIONS = [1, 3, 5, 10];
 const ALIGNMENT_SNAP_THRESHOLD_PX = 5;
 const CLARISOFT_TEXT_FIELD_HEIGHT_MM_PER_PITCH = 0.4;
 
@@ -241,6 +242,7 @@ let state = {
   selectedName: null,
   selectedNames: [],
   showHiddenOnCanvas: false,
+  gridMm: GRID_MM,
 
   validation: {
     invalidPrintableFieldNames: []
@@ -327,6 +329,7 @@ const elRulerLeft = $("rulerLeft");
 const elToggleGrid = $("toggleGrid");
 const elToggleSnap = $("toggleSnap");
 const elToggleAlign = $("toggleAlign");
+const elGridSizeSelect = $("gridSizeSelect");
 const elBtnPanMode = $("btnPanMode");
 const elZoomRange = $("zoomRange");
 const elZoomLabel = $("zoomLabel");

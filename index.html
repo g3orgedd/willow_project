@@ -271,15 +271,27 @@
       </div>
 
       <div class="panel__section tabview" id="tab-xml-advanced">
-        <div class="sectionBlock languageSettings">
+        <div class="sectionBlock languageSettings advancedSelectSetting">
           <div class="fieldRow">
             <label for="uiLanguageSelect">Language</label>
             <select id="uiLanguageSelect" class="select" data-ui-language-select></select>
           </div>
         </div>
 
+        <div class="sectionBlock advancedSelectSetting">
+          <div class="fieldRow">
+            <label for="gridSizeSelect">Grid size</label>
+            <select id="gridSizeSelect" class="select">
+              <option value="1" selected>1 mm</option>
+              <option value="3">3 mm</option>
+              <option value="5">5 mm</option>
+              <option value="10">10 mm</option>
+            </select>
+          </div>
+        </div>
+
         <div class="hr"></div>
-<!-- 
+        <!-- 
         <div class="panel__title">XML / Advanced</div>
         <div class="muted">Advanced XML parameters will appear here.</div> -->
 

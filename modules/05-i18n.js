@@ -127,6 +127,7 @@ const UI_TRANSLATIONS = {
     "language.label": "Language",
     "language.en": "English",
     "language.ru": "Russian",
+    "grid.size": "Grid size",
 
     "dialog.createTemplate.title": "Create template",
     "dialog.createTemplate.subtitle": "Choose printer model, print mode, and substrate size.",
@@ -271,6 +272,7 @@ const UI_TRANSLATIONS = {
     "language.label": "Язык",
     "language.en": "Английский",
     "language.ru": "Русский",
+    "grid.size": "Размер сетки",
 
     "dialog.createTemplate.title": "Создать шаблон",
     "dialog.createTemplate.subtitle": "Выберите модель принтера, режим печати и размер области.",
@@ -367,6 +369,7 @@ const UI_TRANSLATION_TARGETS = [
   { selector: "#tab-xml-advanced > .panel__title", key: "advanced.title" },
   { selector: "#tab-xml-advanced > .muted", key: "advanced.empty" },
   { selector: "label[for='uiLanguageSelect']", key: "language.label" },
+  { selector: "label[for='gridSizeSelect']", key: "grid.size" },
   { selector: "#tab-xml-advanced .sectionBlock .panel__title", key: "advanced.hiddenEditor" },
   { selector: "#tab-xml-advanced .sectionBlock .muted", key: "advanced.hiddenEditorHint" },
 

@@ -447,6 +447,15 @@ function initUI() {
   elToggleGrid.addEventListener("change", () => renderGrid());
   elToggleSnap.addEventListener("change", () => {/* used during drag */});
   elToggleAlign?.addEventListener("change", () => clearAlignmentGuides());
+  if (elGridSizeSelect) {
+    elGridSizeSelect.value = String(state.gridMm);
+    elGridSizeSelect.addEventListener("change", () => {
+      const nextGridMm = Number(elGridSizeSelect.value);
+      state.gridMm = GRID_SIZE_OPTIONS.includes(nextGridMm) ? nextGridMm : GRID_MM;
+      elGridSizeSelect.value = String(state.gridMm);
+      renderGrid();
+    });
+  }
 
   elSearch.addEventListener("input", () => renderFieldLists());
 
